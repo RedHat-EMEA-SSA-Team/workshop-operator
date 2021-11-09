@@ -1,4 +1,4 @@
-module github.com/mcouliba/workshop-operator
+module github.com/RedHat-EMEA-SSA-Team/workshop-operator
 
 go 1.15
 

@@ -4,5 +4,5 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 images:
 - name: controller
-  newName: quay.io/mcouliba/workshop-operator
+  newName: quay.io/redhat-emea-ssa-team/workshop-operator
   newTag: ocp4.6

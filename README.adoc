@@ -37,13 +37,13 @@ Perform the following tasks:
 [source,bash]
 ----
 oc new-project workshop-infra
-oc apply -f https://raw.githubusercontent.com/mcouliba/workshop-operator/1.0/config/deploy/workshop_operator_deployment.yaml
+oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/1.0/config/deploy/workshop_operator_deployment.yaml
 ----
 
 == Install the Workshop Infrastructure
 
 The Workshop Infrastructure is deployed by creating a Custom Resource based on the **WorkShop** Custom Resource Definition. 
-There is examples of custom resources (CR) in https://github.com/mcouliba/openshift-workshop-operator/tree/master/deploy/crds[crds]
+There is examples of custom resources (CR) in https://github.com/RedHat-EMEA-SSA-Team/workshop-operator/tree/master/deploy/crds[crds]
 
 For instance, to deploy the Workshop Infrastruture for the Cloud-Native Workshop,
 please execute the following command:
@@ -59,6 +59,6 @@ oc apply -n workshop-infra -f config/samples/workshop_v1_cloud_native_workshop.y
 
 [source,bash]
 ----
-make docker-build IMG=quay.io/mcouliba/workshop-operator
-make docker-push IMG=quay.io/mcouliba/workshop-operator
+make docker-build IMG=quay.io/redhat-emea-ssa-team/workshop-operator
+make docker-push IMG=quay.io/redhat-emea-ssa-team/workshop-operator
 ----

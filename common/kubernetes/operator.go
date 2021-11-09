@@ -1,7 +1,7 @@
 package kubernetes
 
 import (
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

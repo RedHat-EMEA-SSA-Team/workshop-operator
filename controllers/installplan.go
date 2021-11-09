@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
-	"github.com/mcouliba/workshop-operator/common/util"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/prometheus/common/log"
 )

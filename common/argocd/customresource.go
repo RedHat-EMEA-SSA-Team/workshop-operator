@@ -1,9 +1,9 @@
 package argocd
 
 import (
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	argocdoperator "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
 	argocd "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

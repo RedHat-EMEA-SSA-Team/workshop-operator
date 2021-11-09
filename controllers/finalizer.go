@@ -3,8 +3,8 @@ package controllers
 import (
 	"context"
 
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	"github.com/go-logr/logr"
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 

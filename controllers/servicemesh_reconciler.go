@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"reflect"
 
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
-	"github.com/mcouliba/workshop-operator/common/maistra"
-	"github.com/mcouliba/workshop-operator/common/util"
 	"github.com/prometheus/common/log"
 
 	rbac "k8s.io/api/rbac/v1"
