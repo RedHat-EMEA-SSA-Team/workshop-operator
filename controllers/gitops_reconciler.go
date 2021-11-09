@@ -62,7 +62,8 @@ func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 	}
 
 	// Wait for Operator to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus("gitops-operator-controller-manager", operatorNamespace) {
+	//	if !kubernetes.GetK8Client().GetDeploymentStatus("gitops-operator-controller-manager", operatorNamespace) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus("gitops-operator", operatorNamespace) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
