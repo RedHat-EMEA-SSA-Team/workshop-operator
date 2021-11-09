@@ -18,7 +18,7 @@ func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, labels map[string]string, redisServiceName string, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) *appsv1.Deployment {
 
-	image := "quay.io/RedHat-EMEA-SSA-Team/username-distribution:latest"
+	image := "quay.io/redhat-emea-ssa-team/username-distribution:latest"
 	labModuleURLs := "https://docs.openshift.com/container-platform/latest/welcome/index.html;openshift_docs"
 	guideURLParameters := "APPS_HOSTNAME_SUFFIX=" + appsHostnameSuffix +
 		"&USER_ID=%USER_ID%" +
