@@ -1,7 +1,7 @@
 apiVersion: workshop.mcouliba.com/v1
 kind: Workshop
 metadata:
-  name: cloud-native-workshop
+  name: end-to-end-developer-workshop
   namespace: workshop-infra
 spec:
   user:
