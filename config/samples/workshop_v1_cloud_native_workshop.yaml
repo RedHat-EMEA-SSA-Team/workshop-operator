@@ -21,7 +21,7 @@ spec:
       enabled: true
       operatorHub:
         channel: latest
-        clusterServiceVersion: crwoperator.v2.12.0
+        clusterServiceVersion: crwoperator.v2.10.1
       openshiftOAuth: false
     gitea:
       enabled: true
@@ -32,7 +32,7 @@ spec:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: openshift-gitops-operator.v1.3.0
+        clusterServiceVersion: openshift-gitops-operator.v1.2.0
     nexus:
       enabled: true
     pipeline:
@@ -47,11 +47,11 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.0.8
+        clusterServiceVersion: servicemeshoperator.v2.0.7.1
       elasticSearchOperatorHub:
         channel: "stable"
       jaegerOperatorHub:
         channel: "stable"
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v1.24.10
+        clusterServiceVersion: kiali-operator.v1.24.9
