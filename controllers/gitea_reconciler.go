@@ -10,13 +10,13 @@ import (
 	"strings"
 	"time"
 
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
-	"github.com/mcouliba/workshop-operator/common/gitea"
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/gitea"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/prometheus/common/log"
 
-	"github.com/mcouliba/workshop-operator/common/util"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -52,7 +52,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 		log.Infof("Created %s Project", giteaNamespace.Name)
 	}
 
-	giteaCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "giteas.gpte.opentlc.com", "gpte.opentlc.com", "Gitea", "GiteaList", "giteas", "gitea", "v1alpha1", nil, nil)
+	giteaCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "giteas.gpte.opentlc.com", "gpte.opentlc.com", "Gitea", "GiteaList", "giteas", "gitea", "v1", nil, nil)
 	if err := r.Create(context.TODO(), giteaCustomResourceDefinition); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {

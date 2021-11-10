@@ -1,8 +1,8 @@
 package codeready
 
 import (
-	che "github.com/eclipse/che-operator/pkg/apis/org/v1"
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	che "github.com/eclipse-che/che-operator/api/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,6 +28,8 @@ type clientRoles struct {
 // NewCustomResource creates a Custom Resource
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string) *che.CheCluster {
+
+	openShiftoAuth := workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth
 
 	pluginRegistryImage := workshop.Spec.Infrastructure.CodeReadyWorkspace.PluginRegistryImage.Name +
 		":" + workshop.Spec.Infrastructure.CodeReadyWorkspace.PluginRegistryImage.Tag
@@ -68,7 +70,7 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 				ChePostgresDb:       "",
 			},
 			Auth: che.CheClusterSpecAuth{
-				OpenShiftoAuth:                workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth,
+				OpenShiftoAuth:                &openShiftoAuth,
 				IdentityProviderImage:         "",
 				ExternalIdentityProvider:      false,
 				IdentityProviderURL:           "",

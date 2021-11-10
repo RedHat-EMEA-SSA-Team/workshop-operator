@@ -1,9 +1,9 @@
 package maistra
 
 import (
-	maistrav1 "github.com/maistra/istio-operator/pkg/apis/maistra/v1"
-	maistrav2 "github.com/maistra/istio-operator/pkg/apis/maistra/v2"
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	maistrav1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
+	maistrav2 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"

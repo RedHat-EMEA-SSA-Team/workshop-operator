@@ -170,14 +170,14 @@ rules:
   - update
   - watch
 - apiGroups:
-  - workshop.mcouliba.com
+  - workshop.redhat-emea-ssa-team.com
   resources:
   - workshops
   - workshops/finalizers
   verbs:
   - '*'
 - apiGroups:
-  - workshop.mcouliba.com
+  - workshop.redhat-emea-ssa-team.com
   resources:
   - workshops/status
   verbs:

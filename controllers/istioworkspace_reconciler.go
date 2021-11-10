@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
-	"github.com/mcouliba/workshop-operator/common/util"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	securityv1 "github.com/openshift/api/security/v1"
 	"github.com/prometheus/common/log"
 

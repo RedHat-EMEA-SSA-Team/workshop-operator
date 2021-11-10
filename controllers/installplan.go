@@ -4,17 +4,18 @@ import (
 	"context"
 	"errors"
 
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
-	"github.com/mcouliba/workshop-operator/common/util"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	"github.com/prometheus/common/log"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 // ApproveInstallPlan approves manually the install of a specific CSV
 func (r *WorkshopReconciler) ApproveInstallPlan(clusterServiceVersion string, subscriptionName string, namespace string) error {
 
 	subscription := &olmv1alpha1.Subscription{}
-	if err := kubernetes.GetObject(r, subscriptionName, namespace, subscription); err != nil {
+
+	if err := r.Get(context.TODO(), types.NamespacedName{Name: subscriptionName, Namespace: namespace}, subscription); err != nil {
 		return err
 	}
 
@@ -25,7 +26,7 @@ func (r *WorkshopReconciler) ApproveInstallPlan(clusterServiceVersion string, su
 		}
 
 		installPlan := &olmv1alpha1.InstallPlan{}
-		if err := kubernetes.GetObject(r, subscription.Status.InstallPlanRef.Name, namespace, installPlan); err != nil {
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: subscription.Status.InstallPlanRef.Name, Namespace: namespace}, installPlan); err != nil {
 			return err
 		}
 

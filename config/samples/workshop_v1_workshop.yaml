@@ -1,4 +1,4 @@
-apiVersion: workshop.mcouliba.com/v1
+apiVersion: workshop.redhat-emea-ssa-team.com/v1
 kind: Workshop
 metadata:
   name: workshop-sample

@@ -29,11 +29,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
-	"github.com/mcouliba/workshop-operator/common/util"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 )
 
 // WorkshopReconciler reconciles a Workshop object
@@ -44,10 +43,10 @@ type WorkshopReconciler struct {
 }
 
 // Finalizer
-const workshopFinalizer = "finalizer.workshop.mcouliba.com"
+const workshopFinalizer = "finalizer.workshop.redhat-emea-ssa-team.com"
 
-// +kubebuilder:rbac:groups=workshop.mcouliba.com,resources=workshops;workshops/finalizers,verbs=*
-// +kubebuilder:rbac:groups=workshop.mcouliba.com,resources=workshops/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=workshop.redhat-emea-ssa-team.com,resources=workshops;workshops/finalizers,verbs=*
+// +kubebuilder:rbac:groups=workshop.redhat-emea-ssa-team.com,resources=workshops/status,verbs=get;update;patch
 
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
@@ -65,9 +64,10 @@ const workshopFinalizer = "finalizer.workshop.mcouliba.com"
 // +kubebuilder:rbac:groups=operators.coreos.com,resources=operatorgroups;subscriptions;clusterserviceversions;installplans,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=argoproj.io,resources=argocds;appprojects,verbs=get;list;watch;create;update;patch;delete
 
-func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
-	reqLogger := r.Log.WithValues("workshop", req.NamespacedName)
+func (r *WorkshopReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	// _ = log.FromContext(ctx)
+
+	// reqLogger := r.Log.WithValues("workshop", req.NamespacedName)
 
 	// Fetch the Workshop workshop
 	workshop := &workshopv1.Workshop{}
@@ -85,37 +85,37 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return reconcile.Result{}, err
 	}
 
-	// Handle Cleanup on Deletion
+	// // Handle Cleanup on Deletion
 
-	// Check if the Workshop workshop is marked to be deleted, which is
-	// indicated by the deletion timestamp being set.
-	isWorkshopMarkedToBeDeleted := workshop.GetDeletionTimestamp() != nil
-	if isWorkshopMarkedToBeDeleted {
-		if util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
-			// Run finalization logic for workshopFinalizer. If the
-			// finalization logic fails, don't remove the finalizer so
-			// that we can retry during the next reconciliation.
-			if err := r.finalizeWorkshop(reqLogger, workshop); err != nil {
-				return ctrl.Result{}, err
-			}
+	// // Check if the Workshop workshop is marked to be deleted, which is
+	// // indicated by the deletion timestamp being set.
+	// isWorkshopMarkedToBeDeleted := workshop.GetDeletionTimestamp() != nil
+	// if isWorkshopMarkedToBeDeleted {
+	// 	if util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
+	// 		// Run finalization logic for workshopFinalizer. If the
+	// 		// finalization logic fails, don't remove the finalizer so
+	// 		// that we can retry during the next reconciliation.
+	// 		if err := r.finalizeWorkshop(reqLogger, workshop); err != nil {
+	// 			return ctrl.Result{}, err
+	// 		}
 
-			// Remove workshopFinalizer. Once all finalizers have been
-			// removed, the object will be deleted.
-			controllerutil.RemoveFinalizer(workshop, workshopFinalizer)
-			err := r.Update(ctx, workshop)
-			if err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-		return ctrl.Result{}, nil
-	}
+	// 		// Remove workshopFinalizer. Once all finalizers have been
+	// 		// removed, the object will be deleted.
+	// 		controllerutil.RemoveFinalizer(workshop, workshopFinalizer)
+	// 		err := r.Update(ctx, workshop)
+	// 		if err != nil {
+	// 			return ctrl.Result{}, err
+	// 		}
+	// 	}
+	// 	return ctrl.Result{}, nil
+	// }
 
-	// Add finalizer for this CR
-	if !util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
-		if err := r.addFinalizer(reqLogger, workshop); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
+	// // Add finalizer for this CR
+	// if !util.Contains(workshop.GetFinalizers(), workshopFinalizer) {
+	// 	if err := r.addFinalizer(reqLogger, workshop); err != nil {
+	// 		return ctrl.Result{}, err
+	// 	}
+	// }
 
 	//////////////////////////
 	// Variables
@@ -208,20 +208,6 @@ func (r *WorkshopReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	// Serverless
 	//////////////////////////
 	if result, err := r.reconcileServerless(workshop); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	//////////////////////////
-	// Vault
-	//////////////////////////
-	if result, err := r.reconcileVault(workshop, users); util.IsRequeued(result, err) {
-		return result, err
-	}
-
-	//////////////////////////
-	// Cert Manager
-	//////////////////////////
-	if result, err := r.reconcileCertManager(workshop, users); util.IsRequeued(result, err) {
 		return result, err
 	}
 

@@ -6,13 +6,13 @@ import (
 	"reflect"
 	"strconv"
 
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
-	"github.com/mcouliba/workshop-operator/common/bookbag"
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/bookbag"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
 	routev1 "github.com/openshift/api/route/v1"
 	"github.com/prometheus/common/log"
 
-	"github.com/mcouliba/workshop-operator/common/util"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

@@ -11,11 +11,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -41,19 +38,6 @@ func GetK8Client() *k8s {
 		return nil
 	}
 	return &client
-}
-
-// GetObject retrieves kubernetes resource
-func GetObject(client client.Client, name string, namespace string, obj runtime.Object) error {
-	return client.Get(context.TODO(), types.NamespacedName{Namespace: namespace, Name: name}, obj)
-}
-
-// IsObjectFound returns true if the kubernetes resource is found
-func IsObjectFound(client client.Client, name string, namespace string, obj runtime.Object) bool {
-	if err := GetObject(client, namespace, name, obj); err != nil {
-		return false
-	}
-	return true
 }
 
 // GetDeploymentStatus listens to deployment events and checks replicas once MODIFIED event is received

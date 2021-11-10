@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"reflect"
 
-	argocdoperatorv1 "github.com/argoproj-labs/argocd-operator/pkg/apis/argoproj/v1alpha1"
-	argocdv1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
-	"github.com/mcouliba/workshop-operator/common/argocd"
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
+	argocdv2 "github.com/argoproj/argo-cd/v2/pkg/apis/application/v1alpha1"
+
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	commonargocdoperator "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/argocdoperator"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
+	argocdoperator "github.com/argoproj-labs/argocd-operator/api/v1alpha1"
 	"github.com/prometheus/common/log"
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
-
-	"github.com/mcouliba/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -108,13 +108,13 @@ g, ` + username + `, ` + userRole + `
 		configMapData[fmt.Sprintf("accounts.%s", username)] = "login"
 
 		labels["app.kubernetes.io/name"] = "appproject-cr"
-		appProjectCustomResource := argocd.NewAppProjectCustomResource(workshop, r.Scheme, projectName, namespace.Name, labels, argocdPolicy)
+		appProjectCustomResource := commonargocdoperator.NewAppProjectCustomResource(workshop, r.Scheme, projectName, namespace.Name, labels, argocdPolicy)
 		if err := r.Create(context.TODO(), appProjectCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
 			log.Infof("Created %s Custom Resource", appProjectCustomResource.Name)
 		} else if errors.IsAlreadyExists(err) {
-			customResourceFound := &argocdv1.AppProject{}
+			customResourceFound := &argocdv2.AppProject{}
 			if err := r.Get(context.TODO(), types.NamespacedName{Name: appProjectCustomResource.Name, Namespace: namespace.Name}, customResourceFound); err != nil {
 				return reconcile.Result{}, err
 			} else if err == nil {
@@ -172,13 +172,13 @@ g, ` + username + `, ` + userRole + `
 	}
 
 	labels["app.kubernetes.io/name"] = "argocd-cr"
-	argoCDCustomResource := argocd.NewArgoCDCustomResource(workshop, r.Scheme, "argocd", namespace.Name, labels, argocdPolicy)
+	argoCDCustomResource := commonargocdoperator.NewArgoCDCustomResource(workshop, r.Scheme, "argocd", namespace.Name, labels, argocdPolicy)
 	if err := r.Create(context.TODO(), argoCDCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Custom Resource", argoCDCustomResource.Name)
 	} else if errors.IsAlreadyExists(err) {
-		customResourceFound := &argocdoperatorv1.ArgoCD{}
+		customResourceFound := &argocdoperator.ArgoCD{}
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: namespace.Name}, customResourceFound); err != nil {
 			return reconcile.Result{}, err
 		} else if err == nil {

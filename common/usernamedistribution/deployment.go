@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strconv"
 
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -18,7 +18,7 @@ func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, labels map[string]string, redisServiceName string, users int,
 	appsHostnameSuffix string, openshiftConsoleURL string) *appsv1.Deployment {
 
-	image := "quay.io/mcouliba/username-distribution:latest"
+	image := "quay.io/RedHat-EMEA-SSA-Team/username-distribution:latest"
 	labModuleURLs := "https://docs.openshift.com/container-platform/latest/welcome/index.html;openshift_docs"
 	guideURLParameters := "APPS_HOSTNAME_SUFFIX=" + appsHostnameSuffix +
 		"&USER_ID=%USER_ID%" +

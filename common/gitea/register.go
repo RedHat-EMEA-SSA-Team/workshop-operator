@@ -9,7 +9,7 @@ import (
 const GroupName = "gpte.opentlc.com"
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1alpha1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1"}
 
 var (
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)

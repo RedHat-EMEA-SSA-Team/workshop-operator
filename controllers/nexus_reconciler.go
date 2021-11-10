@@ -3,12 +3,12 @@ package controllers
 import (
 	"context"
 
-	workshopv1 "github.com/mcouliba/workshop-operator/api/v1"
-	"github.com/mcouliba/workshop-operator/common/kubernetes"
-	nexus "github.com/mcouliba/workshop-operator/common/nexus"
+	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
+	nexus "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/nexus"
 	"github.com/prometheus/common/log"
 
-	"github.com/mcouliba/workshop-operator/common/util"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -70,7 +70,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 		log.Infof("Created %s Cluster Role Binding", nexusClusterRoleBinding.Name)
 	}
 
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/mcouliba/nexus-operator:v0.10", "nexus-operator")
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/RedHat-EMEA-SSA-Team/nexus-operator:v0.10", "nexus-operator")
 	if err := r.Create(context.TODO(), nexusOperator); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
