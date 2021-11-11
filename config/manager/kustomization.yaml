@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/redhat-emea-ssa-team/workshop-operator
-  newTag: "6.0"
+  newTag: "2.0"

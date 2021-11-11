@@ -747,7 +747,7 @@ spec:
         - --enable-leader-election
         command:
         - /manager
-        image: quay.io/redhat-emea-ssa-team/workshop-operator:6.0
+        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.0
         name: manager
         resources:
           limits:
