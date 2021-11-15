@@ -44,7 +44,7 @@ func NewCustomResourceValidation() *apiextensionsv1.CustomResourceValidation {
 							Type: "string",
 						},
 						"giteaSsl": {
-							Type: "bool",
+							Type: "boolean",
 						},
 						"giteaServiceName": {
 							Type: "string",

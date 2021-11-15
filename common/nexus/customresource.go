@@ -22,16 +22,16 @@ func NewCustomResourceValidation() *apiextensionsv1.CustomResourceValidation {
 							Type: "string",
 						},
 						"nexusSsl": {
-							Type: "bool",
+							Type: "boolean",
 						},
 						"nexusImageTag": {
 							Type: "string",
 						},
 						"nexusCpuRequest": {
-							Type: "int64",
+							Type: "integer",
 						},
 						"nexusCpuLimit": {
-							Type: "int64",
+							Type: "integer",
 						},
 						"nexusMemoryRequest": {
 							Type: "string",
@@ -87,7 +87,12 @@ func NewCustomResourceValidation() *apiextensionsv1.CustomResourceValidation {
 											Type: "string",
 										},
 										"member_repos": {
-											Type: "string",
+											Type: "array",
+											Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+												Schema: &apiextensionsv1.JSONSchemaProps{
+													Type: "string",
+												},
+											},
 										},
 									},
 								},
