@@ -70,7 +70,7 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 		log.Infof("Created %s Cluster Role Binding", nexusClusterRoleBinding.Name)
 	}
 
-	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/RedHat-EMEA-SSA-Team/nexus-operator:v0.10", "nexus-operator")
+	nexusOperator := kubernetes.NewAnsibleOperatorDeployment(workshop, r.Scheme, "nexus-operator", nexusNamespace.Name, labels, "quay.io/redhat-emea-ssa-team/nexus-operator:v0.10", "nexus-operator")
 	if err := r.Create(context.TODO(), nexusOperator); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
