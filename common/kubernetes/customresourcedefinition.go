@@ -10,7 +10,7 @@ import (
 
 // NewCustomResourceDefinition creates a Custom Resource Definition (CRD)
 func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
-	name string, group string, kind string, listKind string, plural string, singular string, version string, shortNames []string, additionalPrinterColumns []apiextensionsv1.CustomResourceColumnDefinition) *apiextensionsv1.CustomResourceDefinition {
+	name string, group string, kind string, listKind string, plural string, singular string, version string, schema *apiextensionsv1.CustomResourceValidation) *apiextensionsv1.CustomResourceDefinition {
 
 	crd := &apiextensionsv1.CustomResourceDefinition{
 		ObjectMeta: metav1.ObjectMeta{
@@ -20,11 +20,10 @@ func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.
 			Group: group,
 			Scope: apiextensionsv1.NamespaceScoped,
 			Names: apiextensionsv1.CustomResourceDefinitionNames{
-				Kind:       kind,
-				ListKind:   listKind,
-				Plural:     plural,
-				Singular:   singular,
-				ShortNames: shortNames,
+				Kind:     kind,
+				ListKind: listKind,
+				Plural:   plural,
+				Singular: singular,
 			},
 			Versions: []apiextensionsv1.CustomResourceDefinitionVersion{
 				{
@@ -32,14 +31,9 @@ func NewCustomResourceDefinition(workshop *workshopv1.Workshop, scheme *runtime.
 					Subresources: &apiextensionsv1.CustomResourceSubresources{
 						Status: &apiextensionsv1.CustomResourceSubresourceStatus{},
 					},
-					AdditionalPrinterColumns: additionalPrinterColumns,
-					Served:                   true,
-					Storage:                  true,
-					Schema: &apiextensionsv1.CustomResourceValidation{
-						OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
-							Type: "object",
-						},
-					},
+					Served:  true,
+					Storage: true,
+					Schema:  schema,
 				},
 			},
 		},

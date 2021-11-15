@@ -2,10 +2,105 @@ package nexus
 
 import (
 	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 )
+
+// CustomResourceValidation create a Custom Resource Validation
+func NewCustomResourceValidation() *apiextensionsv1.CustomResourceValidation {
+
+	crv := &apiextensionsv1.CustomResourceValidation{
+		OpenAPIV3Schema: &apiextensionsv1.JSONSchemaProps{
+			Type: "object",
+			Properties: map[string]apiextensionsv1.JSONSchemaProps{
+				"spec": {
+					Type: "object",
+					Properties: map[string]apiextensionsv1.JSONSchemaProps{
+						"nexusVolumeSize": {
+							Type: "string",
+						},
+						"nexusSsl": {
+							Type: "bool",
+						},
+						"nexusImageTag": {
+							Type: "string",
+						},
+						"nexusCpuRequest": {
+							Type: "int64",
+						},
+						"nexusCpuLimit": {
+							Type: "int64",
+						},
+						"nexusMemoryRequest": {
+							Type: "string",
+						},
+						"nexusMemoryLimit": {
+							Type: "string",
+						},
+						"nexus_repos_maven_proxy": {
+							Type: "array",
+							Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+								Schema: &apiextensionsv1.JSONSchemaProps{
+									Type: "object",
+									Properties: map[string]apiextensionsv1.JSONSchemaProps{
+										"name": {
+											Type: "string",
+										},
+										"remote_url": {
+											Type: "string",
+										},
+										"layout_policy": {
+											Type: "string",
+										},
+									},
+								},
+							},
+						},
+						"nexus_repos_maven_hosted": {
+							Type: "array",
+							Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+								Schema: &apiextensionsv1.JSONSchemaProps{
+									Type: "object",
+									Properties: map[string]apiextensionsv1.JSONSchemaProps{
+										"name": {
+											Type: "string",
+										},
+										"version_policy": {
+											Type: "string",
+										},
+										"write_policy": {
+											Type: "string",
+										},
+									},
+								},
+							},
+						},
+						"nexus_repos_maven_group": {
+							Type: "array",
+							Items: &apiextensionsv1.JSONSchemaPropsOrArray{
+								Schema: &apiextensionsv1.JSONSchemaProps{
+									Type: "object",
+									Properties: map[string]apiextensionsv1.JSONSchemaProps{
+										"name": {
+											Type: "string",
+										},
+										"member_repos": {
+											Type: "string",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	return crv
+}
 
 // NewCustomResource create a Custom Resource
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
@@ -53,25 +148,6 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 				{
 					Name:        "maven-all-public",
 					MemberRepos: []string{"maven-central", "redhat-ga", "jboss"},
-				},
-			},
-			NexusReposDockerHosted: []NexusReposDockerHostedSpec{
-				{
-					Name:      "docker",
-					HttpPort:  5000,
-					V1Enabled: true,
-				},
-			},
-			NexusReposNpmProxy: []NexusReposNpmProxySpec{
-				{
-					Name:      "npm",
-					RemoteURL: "https://registry.npmjs.org",
-				},
-			},
-			NexusReposNpmGroup: []NexusReposNpmGroupSpec{
-				{
-					Name:        "npm-all",
-					MemberRepos: []string{"npm"},
 				},
 			},
 		},

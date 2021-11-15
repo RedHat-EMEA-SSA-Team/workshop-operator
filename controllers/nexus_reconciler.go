@@ -42,7 +42,8 @@ func (r *WorkshopReconciler) addNexus(workshop *workshopv1.Workshop) (reconcile.
 		log.Infof("Created %s Project", nexusNamespace.Name)
 	}
 
-	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "nexus.gpte.opentlc.com", "gpte.opentlc.com", "Nexus", "NexusList", "nexus", "nexus", "v1alpha1", nil, nil)
+	customResourceValidation := nexus.NewCustomResourceValidation()
+	nexusCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "nexus.gpte.opentlc.com", "gpte.opentlc.com", "Nexus", "NexusList", "nexus", "nexus", "v1alpha1", customResourceValidation)
 	if err := r.Create(context.TODO(), nexusCustomResourceDefinition); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {

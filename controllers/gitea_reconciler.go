@@ -52,7 +52,8 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 		log.Infof("Created %s Project", giteaNamespace.Name)
 	}
 
-	giteaCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "giteas.gpte.opentlc.com", "gpte.opentlc.com", "Gitea", "GiteaList", "giteas", "gitea", "v1", nil, nil)
+	customResourceValidation := gitea.NewCustomResourceValidation()
+	giteaCustomResourceDefinition := kubernetes.NewCustomResourceDefinition(workshop, r.Scheme, "giteas.gpte.opentlc.com", "gpte.opentlc.com", "Gitea", "GiteaList", "giteas", "gitea", "v1", customResourceValidation)
 	if err := r.Create(context.TODO(), giteaCustomResourceDefinition); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
