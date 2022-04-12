@@ -9,19 +9,19 @@ spec:
     password: openshift
   source:
     gitURL: https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop
-    gitBranch: "6.0"
+    gitBranch: "6.1"
   infrastructure:
     guide:
       scholars:
         enabled: true
         guideURL:
-          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.0/index.html" 
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.0/index.html" 
+          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.1/index.html" 
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.1/index.html" 
     codeReadyWorkspace:
       enabled: true
       operatorHub:
         channel: latest
-        clusterServiceVersion: crwoperator.v2.12.1
+        clusterServiceVersion: crwoperator.v2.15.2
       openshiftOAuth: false
     gitea:
       enabled: true
@@ -32,14 +32,14 @@ spec:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: openshift-gitops-operator.v1.3.0
+        clusterServiceVersion: openshift-gitops-operator.v1.4.5
     nexus:
       enabled: true
     pipeline:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: redhat-openshift-pipelines.v1.5.2
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.6.2
     project:
       enabled: true
       stagingName: cn-project
@@ -47,11 +47,11 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.1.0
+        clusterServiceVersion: servicemeshoperator.v2.1.2
       elasticSearchOperatorHub:
         channel: "stable"
       jaegerOperatorHub:
         channel: "stable"
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v1.36.5
+        clusterServiceVersion: kiali-operator.v1.36.6
