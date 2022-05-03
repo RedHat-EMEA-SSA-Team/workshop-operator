@@ -17,3 +17,13 @@ oc create secret generic htpasswd-secret --from-file=htpasswd=https://raw.github
 oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/oath_htpasswd_provider -n openshift-config
 ----
 
+If you want, you can build your own password file like this:
+
+[source,bash]
+----
+htpasswd -c -B -b htpasswd user1 openshift
+for i in {2..20} 
+do
+htpasswd -B -b htpasswd user$i openshift
+done
+----
