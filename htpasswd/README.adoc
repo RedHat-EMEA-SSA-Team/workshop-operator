@@ -14,7 +14,7 @@ Run these simple scripts to add the simple password file for 20 users
 [source,bash]
 ----
 oc create secret generic htpasswd-secret --from-file=htpasswd=https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/htpasswd/htpasswd -n openshift-config
-oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/oath_htpasswd_provider -n openshift-config
+oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/oauth_htpasswd_provider -n openshift-config
 ----
 
 If you want, you can build your own password file like this:
