@@ -1,0 +1,19 @@
+= User authentication
+
+== Overview
+
+This workshop operator targets RHPDS which include a known set of regular users: user1 to userN.
+
+To use this workshop on other providers eg ROSA you will need a htpasswd file and some OpenShift
+configuration to achieve the same user base.
+
+You will need to be Cluster admin
+
+Run these simple scripts to add the simple password file for 20 users
+
+[source,bash]
+----
+oc create secret generic htpasswd-secret --from-file=htpasswd=https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/htpasswd/htpasswd -n openshift-config
+oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/oath_provider -n openshift-config
+----
+
