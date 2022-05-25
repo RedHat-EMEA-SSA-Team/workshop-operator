@@ -20,8 +20,8 @@ spec:
     codeReadyWorkspace:
       enabled: true
       operatorHub:
-        channel: latest
-        clusterServiceVersion: crwoperator.v2.15.2
+        channel: tech-preview-latest-all-namespaces
+        clusterServiceVersion: crwoperatorallnamespaces.v2.15.104
       openshiftOAuth: false
     gitea:
       enabled: true
