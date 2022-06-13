@@ -31,15 +31,15 @@ spec:
     gitops:
       enabled: true
       operatorHub:
-        channel: stable
-        clusterServiceVersion: openshift-gitops-operator.v1.4.5
+        channel: gitops-1.5
+        clusterServiceVersion: openshift-gitops-operator.v1.5.2
     nexus:
       enabled: true
     pipeline:
       enabled: true
       operatorHub:
-        channel: stable
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.6.2
+        channel: pipelines-1.7
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.7.0
     project:
       enabled: true
       stagingName: cn-project
