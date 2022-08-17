@@ -9,20 +9,20 @@ spec:
     password: openshift
   source:
     gitURL: https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop
-    gitBranch: "6.1"
+    gitBranch: "6.2"
   infrastructure:
     guide:
       scholars:
         enabled: true
         guideURL:
-          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.1/index.html" 
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.1/index.html" 
+          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.2/index.html" 
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.2/index.html" 
     codeReadyWorkspace:
       enabled: true
       operatorHub:
-        channel: tech-preview-latest-all-namespaces
-        clusterServiceVersion: crwoperatorallnamespaces.v2.15.104
-      openshiftOAuth: false
+        channel: stable
+        clusterServiceVersion: devspacesoperator.v3.0.0
+      openshiftOAuth: true
     gitea:
       enabled: true
       image:
@@ -32,14 +32,14 @@ spec:
       enabled: true
       operatorHub:
         channel: gitops-1.5
-        clusterServiceVersion: openshift-gitops-operator.v1.5.2
+        clusterServiceVersion: openshift-gitops-operator.v1.5.3
     nexus:
       enabled: true
     pipeline:
       enabled: true
       operatorHub:
         channel: pipelines-1.7
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.7.0
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.7.2
     project:
       enabled: true
       stagingName: cn-project
@@ -47,11 +47,11 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.1.2
+        clusterServiceVersion: servicemeshoperator.v2.2.1
       elasticSearchOperatorHub:
         channel: "stable"
       jaegerOperatorHub:
         channel: "stable"
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v1.36.6
+        clusterServiceVersion: kiali-operator.v1.48.2

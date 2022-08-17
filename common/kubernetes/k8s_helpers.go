@@ -16,6 +16,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
+const timedWait int64 = 200; // seconds
+
 var (
 	k8sclient = GetK8Client()
 )
@@ -43,7 +45,7 @@ func GetK8Client() *k8s {
 // GetDeploymentStatus listens to deployment events and checks replicas once MODIFIED event is received
 func (cl *k8s) GetDeploymentStatus(name string, namespace string) (scaled bool) {
 	api := cl.clientset.AppsV1()
-	var timeout int64 = 420
+	var timeout int64 = timedWait;
 	listOptions := metav1.ListOptions{
 		FieldSelector:  fields.OneTermEqualSelector("metadata.name", name).String(),
 		TimeoutSeconds: &timeout,

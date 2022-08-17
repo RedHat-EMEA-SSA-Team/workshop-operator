@@ -30,7 +30,7 @@ func (r *WorkshopReconciler) ApproveInstallPlan(clusterServiceVersion string, su
 			return err
 		}
 
-		if util.StringInSlice(clusterServiceVersion, installPlan.Spec.ClusterServiceVersionNames) && !installPlan.Spec.Approved {
+		if (clusterServiceVersion == "" || util.StringInSlice(clusterServiceVersion, installPlan.Spec.ClusterServiceVersionNames)) && !installPlan.Spec.Approved {
 			installPlan.Spec.Approved = true
 			if err := r.Update(context.TODO(), installPlan); err != nil {
 				return err

@@ -190,9 +190,16 @@ func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Works
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Namespace", redhatOperatorsNamespace.Name)
+
+		redhatOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, "operators-redhat-group", redhatOperatorsNamespace.Name, "")
+		if err := r.Create(context.TODO(), redhatOperatorGroup); err != nil && !errors.IsAlreadyExists(err) {
+			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Created %s OperatorGroup", redhatOperatorGroup.Name)
+		}	
 	}
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, "openshift-operators-redhat",
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, redhatOperatorsNamespace.Name,
 		"elasticsearch-operator", channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -200,7 +207,7 @@ func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Works
 		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	if err := r.ApproveInstallPlan(clusterserviceversion, subcriptionName, "openshift-operators-redhat"); err != nil {
+	if err := r.ApproveInstallPlan(clusterserviceversion, subcriptionName, redhatOperatorsNamespace.Name); err != nil {
 		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
@@ -214,16 +221,30 @@ func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (r
 	channel := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.JaegerOperatorHub.ClusterServiceVersion
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "jaeger-product", "openshift-operators",
-		"jaeger-product", channel, clusterserviceversion)
+	redhatOperatorsNamespace := kubernetes.NewNamespace(workshop, r.Scheme, "openshift-distibuted-tracing")
+	if err := r.Create(context.TODO(), redhatOperatorsNamespace); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Namespace", redhatOperatorsNamespace.Name)
+		
+		redhatOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, "distributed-tracing-group", redhatOperatorsNamespace.Name, "")
+		if err := r.Create(context.TODO(), redhatOperatorGroup); err != nil && !errors.IsAlreadyExists(err) {
+			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Created %s OperatorGroup", redhatOperatorGroup.Name)
+		}	
+	}
+
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "jaeger-product", redhatOperatorsNamespace.Name,
+"jaeger-product", channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	if err := r.ApproveInstallPlan(clusterserviceversion, "jaeger-product", "openshift-operators"); err != nil {
-		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
+	if err := r.ApproveInstallPlan(clusterserviceversion, "jaeger-product", redhatOperatorsNamespace.Name); err != nil {
+	log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
 

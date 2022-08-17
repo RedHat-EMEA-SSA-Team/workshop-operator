@@ -11,20 +11,30 @@ import (
 
 // NewOperatorGroup creates an Operator Group
 func NewOperatorGroup(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
-	name string, namespace string) *olmv1.OperatorGroup {
+	name string, namespace string, targetnamespace string) *olmv1.OperatorGroup {
 
-	operatorgroup := &olmv1.OperatorGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-		},
-		Spec: olmv1.OperatorGroupSpec{
-			TargetNamespaces: []string{
-				namespace,
+	var operatorgroup *olmv1.OperatorGroup = nil
+
+	if (targetnamespace != "") {
+		operatorgroup = &olmv1.OperatorGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
 			},
-		},
+			Spec: olmv1.OperatorGroupSpec{
+				TargetNamespaces: []string{
+					targetnamespace,
+				},
+			},
+		}
+	} else {
+		operatorgroup = &olmv1.OperatorGroup{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: namespace,
+			},
+		}
 	}
-
 	// Set Workshop instance as the owner and controller
 	ctrl.SetControllerReference(workshop, operatorgroup, scheme)
 

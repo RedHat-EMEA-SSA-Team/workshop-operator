@@ -29,7 +29,7 @@ type clientRoles struct {
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string) *che.CheCluster {
 
-	openShiftoAuth := workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth
+//	openShiftoAuth := workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth
 
 	pluginRegistryImage := workshop.Spec.Infrastructure.CodeReadyWorkspace.PluginRegistryImage.Name +
 		":" + workshop.Spec.Infrastructure.CodeReadyWorkspace.PluginRegistryImage.Tag
@@ -49,40 +49,25 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 		},
 		Spec: che.CheClusterSpec{
 			Server: che.CheClusterSpecServer{
-				CheImageTag: "",
-				CheFlavor:   "codeready",
 				CustomCheProperties: map[string]string{
-					"CHE_INFRA_KUBERNETES_NAMESPACE_DEFAULT": "<username>-workspace",
-					"CHE_LIMITS_USER_WORKSPACES_RUN_COUNT":   "2",
-					"CHE_LIMITS_WORKSPACE_IDLE_TIMEOUT":      "0",
-				},
-				DevfileRegistryImage: "",
-				PluginRegistryImage:  pluginRegistryImage,
+					"CHE_LIMITS_USER_WORKSPACES_RUN_COUNT":   "2",  // max 2 workspaces running
+					"CHE_LIMITS_WORKSPACE_IDLE_TIMEOUT":  "30000000",  // timeout in milliseconds, this is about about 8 hours; @60x60x1000
+					"CHE_LIMITS_WORKSPACE_RUN_TIMEOUT":   "0",
+					},
 				TlsSupport:           true,
 				SelfSignedCert:       false,
 			},
 			Database: che.CheClusterSpecDB{
 				ExternalDb:          false,
-				ChePostgresHostName: "",
-				ChePostgresPort:     "",
-				ChePostgresUser:     "",
-				ChePostgresPassword: "",
-				ChePostgresDb:       "",
 			},
 			Auth: che.CheClusterSpecAuth{
-				OpenShiftoAuth:                &openShiftoAuth,
-				IdentityProviderImage:         "",
 				ExternalIdentityProvider:      false,
-				IdentityProviderURL:           "",
-				IdentityProviderRealm:         "",
-				IdentityProviderClientId:      "",
 				IdentityProviderAdminUserName: "admin",
 				IdentityProviderPassword:      "admin",
 			},
 			Storage: che.CheClusterSpecStorage{
-				PvcStrategy:       "per-workspace",
+				PvcStrategy:       "common",
 				PvcClaimSize:      "1Gi",
-				PreCreateSubPaths: true,
 			},
 		},
 	}
