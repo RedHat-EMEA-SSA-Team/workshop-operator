@@ -21,7 +21,7 @@ spec:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: devspacesoperator.v3.0.0
+        clusterServiceVersion: devspacesoperator.v3.1.0
       openshiftOAuth: true
     gitea:
       enabled: true
