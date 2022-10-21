@@ -59,6 +59,6 @@ oc apply -n workshop-infra -f config/samples/workshop_v1_cloud_native_workshop.y
 
 [source,bash]
 ----
-make docker-build IMG=quay.io/redhat-emea-ssa-team/workshop-operator
-make docker-push IMG=quay.io/redhat-emea-ssa-team/workshop-operator
+make podman-build IMG=quay.io/redhat-emea-ssa-team/workshop-operator
+make podman-push IMG=quay.io/redhat-emea-ssa-team/workshop-operator
 ----
