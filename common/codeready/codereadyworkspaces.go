@@ -29,6 +29,8 @@ type clientRoles struct {
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string) *che.CheCluster {
 
+	i := int32(-1)
+
 //	openShiftoAuth := workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth
 
 	pluginRegistryImage := workshop.Spec.Infrastructure.CodeReadyWorkspace.PluginRegistryImage.Name +
@@ -68,6 +70,9 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			Storage: che.CheClusterSpecStorage{
 				PvcStrategy:       "common",
 				PvcClaimSize:      "1Gi",
+			},
+			DevWorkspace: che.CheClusterSpecDevWorkspace{
+				SecondsOfInactivityBeforeIdling: &i,  // unlimited before timeout
 			},
 		},
 	}
