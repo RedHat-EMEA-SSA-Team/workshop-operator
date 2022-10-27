@@ -218,7 +218,7 @@ func (r *WorkshopReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 		return result, err
 	}
 
-	log.Infof("Everythign reconciled")
+	log.Infof("Everything reconciled")
 
 	return ctrl.Result{}, nil
 }

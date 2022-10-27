@@ -23,6 +23,7 @@ oc delete serviceaccounts devworkspace-webhook-server -n openshift-operators
 oc delete configmap devworkspace-controller -n openshift-operators
 oc delete clusterrole devworkspace-webhook-server
 oc delete clusterrolebinding devworkspace-webhook-server
+oc delete project openshift-devspaces
 # delete user projects
 for i in {1..5}
 do
