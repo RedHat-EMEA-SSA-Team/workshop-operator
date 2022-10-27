@@ -1,5 +1,6 @@
 set -x
 oc get checluster --all-namespaces -o=jsonpath="{.items[*].metadata.namespace}"
+~/Projects/CRW/dsc/bin/dsc version
 ~/Projects/CRW/dsc/bin/dsc server:delete -n openshift-devspaces
 oc delete devworkspaces.workspace.devfile.io --all-namespaces --selector 'console.openshift.io/terminal=true' --wait 
 oc delete devworkspacetemplates.workspace.devfile.io --all-namespaces --selector 'console.openshift.io/terminal=true' --wait 
