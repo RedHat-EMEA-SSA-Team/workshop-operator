@@ -25,6 +25,11 @@ type clientRoles struct {
 	RealmManagement []string `json:"realm-management"`
 }
 
+//
+// THIS CHE/V1 API CRD is now deprecated and will be removed in the future
+//
+// FIXME
+//
 // NewCustomResource creates a Custom Resource
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string) *che.CheCluster {
@@ -43,7 +48,7 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	cr := &che.CheCluster{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "CheCluster",
-			APIVersion: "v1",
+			APIVersion: "v1",   // THIS CHE/V1 API CRD is now deprecated and will be removed in the future
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
