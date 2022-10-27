@@ -32,14 +32,14 @@ spec:
       enabled: true
       operatorHub:
         channel: gitops-1.5
-        clusterServiceVersion: openshift-gitops-operator.v1.5.3
+        clusterServiceVersion: openshift-gitops-operator.v1.5.5
     nexus:
       enabled: true
     pipeline:
       enabled: true
       operatorHub:
         channel: pipelines-1.7
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.7.2
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.7.3
     project:
       enabled: true
       stagingName: cn-project
@@ -47,11 +47,11 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.2.1
+        clusterServiceVersion: servicemeshoperator.v2.2.3
       elasticSearchOperatorHub:
         channel: "stable"
       jaegerOperatorHub:
         channel: "stable"
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v1.48.2
+        clusterServiceVersion: kiali-operator.v1.48.3

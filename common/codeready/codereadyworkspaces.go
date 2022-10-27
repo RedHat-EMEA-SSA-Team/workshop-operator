@@ -84,6 +84,7 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 
 	// Set Workshop instance as the owner and controller
 	ctrl.SetControllerReference(workshop, cr, scheme)
+
 	return cr
 }
 

@@ -15,7 +15,8 @@ import (
 func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string) *appsv1.Deployment {
 
-	image := "image-registry.openshift-image-registry.svc:5000/openshift/redis:5"
+	// dependent on Openshift imagestream here to map to redis 6 on rhel
+	image := "image-registry.openshift-image-registry.svc:5000/openshift/redis"
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
