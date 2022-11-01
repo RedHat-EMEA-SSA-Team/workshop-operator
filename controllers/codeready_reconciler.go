@@ -100,10 +100,19 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 	}
 
 	codeReadyWorkspacesCustomResource := codeready.NewCustomResource(workshop, r.Scheme, CheClusterCustomResource, codeReadyWorkspacesNamespace.Name)
-	if err := r.Create(context.TODO(), codeReadyWorkspacesCustomResource); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
+	err := r.Create(context.TODO(), codeReadyWorkspacesCustomResource); 
+	
+	if (err == nil) {
 		log.Infof("Created %s Custom Resource", codeReadyWorkspacesCustomResource.Name)
+
+	} else if (errors.ReasonForError(err) == "only one CheCluster is allowed") {
+		// Now Dev Spaces only allows one instance of the Che CR at the moment, so reports an attempt to add an extra one 
+		// as forbidden 403 and not as "AlreadyExists". So we need to ignore that
+//		log.Infof("An instance of %s Custom Resource already exists", codeReadyWorkspacesCustomResource.Name)
+		err = nil
+
+	} else if (err != nil && !errors.IsAlreadyExists(err)) {
+		return reconcile.Result{}, err
 	}
 
 	// Wait for CodeReadyWorkspace to be running
