@@ -591,6 +591,28 @@ rules:
   - update
   - watch
 - apiGroups:
+  - workspace.devfile.io
+  resources:
+  - devworkspaces
+  - devworkspacetemplates
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - patch
+  - update
+- apiGroups:
+  - controller.devfile.io
+  resources:
+  - devworkspaceroutings
+  - components
+  verbs:
+  - create
+  - delete
+  - deletecollection
+  - patch
+  - update
+- apiGroups:
   - project.openshift.io
   resources:
   - projectrequests
