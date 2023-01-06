@@ -12,11 +12,19 @@ import (
 func NewConfigMap(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string, labels map[string]string, data map[string]string) *corev1.ConfigMap {
 
+	return NewConfigMapAnnotate(workshop, scheme, name, namespace, labels, data, nil);
+}
+
+// NewConfigMap creates a Config Map with annotations
+func NewConfigMapAnnotate(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
+	name string, namespace string, labels map[string]string, data map[string]string, annotations map[string]string) *corev1.ConfigMap {
+
 	configmap := &corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 			Labels:    labels,
+			Annotations: annotations,
 		},
 		Data: data,
 	}

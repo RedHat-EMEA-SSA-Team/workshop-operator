@@ -356,6 +356,8 @@ github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8l
 github.com/devfile/api/v2 v2.0.0-20210713124824-03e023e7078b/go.mod h1:QNzaIVQnCsYfXed+QZOn1uvEQFzyhvpi/uc3g/b2ws0=
 github.com/devfile/api/v2 v2.0.0-20220414122024-32cae1f8e42c h1:yyidoxal8ngJWDxRuVZMNh4PBwqDIzOkTeOagtmRiy0=
 github.com/devfile/api/v2 v2.0.0-20220414122024-32cae1f8e42c/go.mod h1:kLX/nW93gigOHXK3NLeJL2fSS/sgEe+OHu8bo3aoOi4=
+github.com/devfile/api/v2 v2.2.0 h1:3Mwl/dtT508oU4pNt/v4G8vqvjoZqi9LOInXCNwKMoc=
+github.com/devfile/api/v2 v2.2.0/go.mod h1:dN7xFrOVG+iPqn4UKGibXLd5oVsdE8XyK9OEb5JL3aI=
 github.com/devfile/devworkspace-operator v0.2.1-0.20211005102315-728dff7e987c/go.mod h1:NJBkFTNuP1vusHXm8yky1hjA1JVtRdrWl49vaQs0eiw=
 github.com/devfile/devworkspace-operator v0.15.2 h1:CcLGHtuBOKdwpeYV8Iy7ZwUSgavcMbjuPA9ejupM7BE=
 github.com/devfile/devworkspace-operator v0.15.2/go.mod h1:fM3/GhPWEL8JZOEImCnpyxTYEf9dN6PsjzJq+ffcD1k=

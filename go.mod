@@ -6,6 +6,7 @@ require (
 	github.com/MakeNowJust/heredoc v0.0.0-20171113091838-e9091a26100e // indirect
 	github.com/argoproj-labs/argocd-operator v0.1.0
 	github.com/argoproj/argo-cd/v2 v2.1.6
+	github.com/devfile/api/v2 v2.2.0
 	github.com/eclipse-che/che-operator v0.0.0-20221025114737-25d1979b0680
 	github.com/emicklei/go-restful v2.11.1+incompatible // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32

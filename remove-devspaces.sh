@@ -31,3 +31,4 @@ do
 done
 #
 echo "Now uninstall the Dev WorkSpace Operator"
+~/Projects/CRW/dsc/bin/dsc server:delete -n openshift-devspaces --delete-all

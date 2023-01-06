@@ -46,6 +46,7 @@ import (
 	olmv1 "github.com/operator-framework/api/pkg/operators/v1"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	workspaces "github.com/devfile/api/v2/pkg/apis/workspaces/v1alpha2"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -72,6 +73,7 @@ func init() {
 	utilruntime.Must(argocdoperatorv1.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(che.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(securityv1.AddToScheme(scheme))
+	utilruntime.Must(workspaces.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }

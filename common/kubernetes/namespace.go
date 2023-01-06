@@ -12,9 +12,17 @@ import (
 // NewNamespace creates a new namespace/project
 func NewNamespace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name string) *corev1.Namespace {
 
+	return NewNamespaceAnnotate(workshop, scheme, name, nil, nil)
+}
+
+// NewNamespace creates a new namespace/project
+func NewNamespaceAnnotate(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name string, labels map[string]string, annotations map[string]string) *corev1.Namespace {
+
 	namespace := &corev1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
+			Labels: labels,
+			Annotations: annotations,
 		},
 	}
 
