@@ -20,6 +20,9 @@ import (
 
 	workspaces "github.com/devfile/api/v2/pkg/apis/workspaces/v1alpha2"
 	"github.com/devfile/api/v2/pkg/attributes"
+	dparse "github.com/devfile/library/pkg/devfile"
+	"github.com/devfile/library/pkg/devfile/parser"
+	"github.com/devfile/library/pkg/devfile/parser/data/v2/common"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -27,6 +30,14 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+var jsonCheCodeEclipse = v1.JSON {Raw: []byte(`"che-code.eclipse.org"`) }
+var jsonFalse = v1.JSON {Raw: []byte(`false`) }
+var jsonTrue = v1.JSON {Raw: []byte(`true`) }
+var jsonCommon = v1.JSON {Raw: []byte(`"common"`) }
+var jsonMain = v1.JSON {Raw: []byte(`"main"`) }
+
+var cheEnvs = []workspaces.EnvVar{} 
 
 // Reconciling CodeReadyWorkspace
 func (r *WorkshopReconciler) reconcileCodeReadyWorkspace(workshop *workshopv1.Workshop, users int,
@@ -128,11 +139,16 @@ func (r *WorkshopReconciler) addCodeReadyWorkspace(workshop *workshopv1.Workshop
 		return result, err
 	}
 
+	devObj, result, err := getDevFileObj(workshop, devfile, appsHostnameSuffix)
+	if err != nil {
+		return result, err
+	}
+
 	// loop through the users to try and activate their workspace
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprintf("user%d", id)
 
-		if result, err := r.initWorkspace(workshop, username, CheURLCodeFlavour, devfile, appsHostnameSuffix); err != nil {
+		if result, err := r.initWorkspace(workshop, username, CheURLCodeFlavour, devfile, devObj, appsHostnameSuffix); err != nil {
 			return result, err
 		}
 
@@ -151,8 +167,109 @@ func getDevFileName(workshop *workshopv1.Workshop) (string, reconcile.Result, er
 	return fmt.Sprintf("https://raw.githubusercontent.com%s/%s/devfile.yaml", gitURL.Path, workshop.Spec.Source.GitBranch), reconcile.Result{}, nil
 }
 
+func getDevFileObj(workshop *workshopv1.Workshop, devfileURL string, appsHostnameSuffix string) (parser.DevfileObj, reconcile.Result, error) {
+
+	d, err := dparse.ParseFromURLAndValidate(devfileURL)
+	if err != nil {
+		return d, reconcile.Result{}, err
+	}
+
+	// use supplied container (inside component)
+	suppliedComponents, err := d.Data.GetComponents(common.DevfileOptions{})
+	if err != nil {
+		return d, reconcile.Result{}, err
+	}
+	
+	container := suppliedComponents[0].Container
+
+	container.Container.Command = []string {"/checode/entrypoint-volume.sh"}
+	container.Container.VolumeMounts = append(container.Container.VolumeMounts, workspaces.VolumeMount {
+		Name: "checode",
+		Path: "/checode",
+		})
+
+	cheEnvs = []workspaces.EnvVar {
+			{
+				Name: "CHE_DASHBOARD_URL",
+				Value: "https://devspaces."+appsHostnameSuffix,
+			},
+			{
+				Name: "CHE_PLUGIN_REGISTRY_URL",
+				Value: "https://devspaces."+appsHostnameSuffix+"/plugin-registry/v3",
+			},
+			{
+				Name: "CHE_PLUGIN_REGISTRY_INTERNAL_URL",
+				Value: "http://plugin-registry.openshift-devspaces.svc:8080/v3",
+			},
+			{
+				Name: "OPENVSX_REGISTRY_URL",
+				Value: "https://open-vsx.org",
+			},
+		}
+
+	// extend the devfile enVar array with the builtin Che values
+	container.Env = append(container.Env, cheEnvs[0], cheEnvs[1], cheEnvs[2], cheEnvs[3])
+	
+	secure := false
+
+	// append endpoints to the existing container values
+	endpoints := []workspaces.Endpoint{
+		{
+			Name: "che-code",
+			Exposure: workspaces.PublicEndpointExposure,
+			Protocol: workspaces.HTTPSEndpointProtocol,
+			TargetPort: 3100,
+			Path: "?tkn=eclipse-che",
+			Secure: &secure,
+			Attributes: attributes.Attributes{
+				"contributed-by": jsonCheCodeEclipse,
+				"discoverable": jsonFalse,
+				"urlRewriteSupported": jsonTrue,
+				"type": jsonMain,
+				"cookiesAuthEnabled": jsonTrue,
+				},
+		},
+		{
+			Name: "code-redirect-1",
+			Exposure: workspaces.PublicEndpointExposure,
+			Protocol: workspaces.HTTPEndpointProtocol,
+			TargetPort: 13131,
+			Attributes: attributes.Attributes{
+				"contributed-by": jsonCheCodeEclipse,
+				"discoverable": jsonFalse,
+				"urlRewriteSupported": jsonTrue,
+				},
+		},
+		{
+			Name: "code-redirect-2",
+			Exposure: workspaces.PublicEndpointExposure,
+			Protocol: workspaces.HTTPEndpointProtocol,
+			TargetPort: 13132,
+			Attributes: attributes.Attributes{
+				"contributed-by": jsonCheCodeEclipse,
+				"discoverable": jsonFalse,
+				"urlRewriteSupported": jsonTrue,
+				},
+		},
+		{
+			Name: "code-redirect-3",
+			Exposure: workspaces.PublicEndpointExposure,
+			Protocol: workspaces.HTTPEndpointProtocol,
+			TargetPort: 13133,
+			Attributes: attributes.Attributes{
+				"contributed-by": jsonCheCodeEclipse,
+				"discoverable": jsonFalse,
+				"urlRewriteSupported": jsonTrue,
+				},
+		},
+	}
+	container.Endpoints = append(container.Endpoints, endpoints[0], endpoints[1], endpoints[2], endpoints[3])	
+
+	return d, reconcile.Result{}, nil;
+}
+
 func (r *WorkshopReconciler) initWorkspace(workshop *workshopv1.Workshop, username string,
-	codeflavor string, devfile string, appsHostnameSuffix string) (reconcile.Result, error) {
+	codeflavor string, devfile string, devObj parser.DevfileObj, appsHostnameSuffix string) (reconcile.Result, error) {
 
 	const userNameAppend = "-devspaces"
 	const settingsCMName = "settings-xml"
@@ -224,7 +341,7 @@ func (r *WorkshopReconciler) initWorkspace(workshop *workshopv1.Workshop, userna
 	}
 
 	// Create DevWorkspace (DW)
-	dwwork := NewDevWorkspace(workshop, r.Scheme, username+userNameAppend, appsHostnameSuffix, devfile, workshop.Spec.Source.GitBranch)
+	dwwork := NewDevWorkspace(workshop, r.Scheme, username+userNameAppend, devfile, devObj)
 	if err := r.Create(context.TODO(), dwwork); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -250,30 +367,11 @@ func NewDWTemplate(workshop *workshopv1.Workshop, scheme *runtime.Scheme, namesp
 		},
 	}
 	
-	envs := []workspaces.EnvVar {
-		{
-			Name: "CHE_DASHBOARD_URL",
-			Value: "https://devspaces."+appsHostnameSuffix,
-		},
-		{
-			Name: "CHE_PLUGIN_REGISTRY_URL",
-			Value: "https://devspaces."+appsHostnameSuffix+"/plugin-registry/v3",
-		},
-		{
-			Name: "CHE_PLUGIN_REGISTRY_INTERNAL_URL",
-			Value: "http://plugin-registry.openshift-devspaces.svc:8080/v3",
-		},
-		{
-			Name: "OPENVSX_REGISTRY_URL",
-			Value: "https://open-vsx.org",
-		},
-	}
-
 	container := &workspaces.ContainerComponent{
 		Container: workspaces.Container{
 			CpuRequest: "30m",
 			Command: []string {"/entrypoint-init-container.sh"},
-			Env: envs,
+			Env: cheEnvs,
 			MemoryRequest: "32Mi",
 			SourceMapping: "/projects",
 			CpuLimit: "500m",
@@ -385,468 +483,28 @@ func NewDWTemplate(workshop *workshopv1.Workshop, scheme *runtime.Scheme, namesp
 
 
 // NewDevWorkspace
-func NewDevWorkspace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, namespace string, appsHostnameSuffix string, devfile string, version string) *workspaces.DevWorkspace {
+func NewDevWorkspace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, namespace string,  
+	devfile string, devObj parser.DevfileObj) *workspaces.DevWorkspace {
 
-	jsonCheCodeEclipse := v1.JSON {Raw: []byte(`"che-code.eclipse.org"`) }
-	jsonFalse := v1.JSON {Raw: []byte(`false`) }
-	jsonTrue := v1.JSON {Raw: []byte(`true`) }
-	jsonHttp := v1.JSON {Raw: []byte(`"http"`) }
-	jsonBranch := v1.JSON {Raw: []byte(`"branch"`) }
-	jsonCommon := v1.JSON {Raw: []byte(`"common"`) }
-	jsonMain := v1.JSON {Raw: []byte(`"main"`) }
-
-
-	commands := []workspaces.Command {
-		{
-		Id: "openshift---login",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo login $(oc whoami --show-server) --username=${DEVWORKSPACE_NAMESPACE%-devspaces} --password=openshift --insecure-skip-tls-verify`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "OpenShift - Login",
-				} ,
-				WorkingDir: "/projects/workshop",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "openshift---create-development-project",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo project create my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "OpenShift - Create Development Project",
-				} ,
-				WorkingDir: "/projects/workshop",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "inventory---compile-dev-mode",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `[[ ! -z "$(ps aux | grep -v grep | grep "compile quarkus:dev" | awk '{print $2}')" ]] &&  echo '!! Application already running in Dev Mode !!' ||  mvn compile quarkus:dev -Ddebug=false`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Inventory - Compile (Dev Mode)",
-				} ,
-				WorkingDir: "/projects/workshop/labs/inventory-quarkus",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "inventory---build",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `mvn clean package -DskipTests`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Inventory - Build",
-				} ,
-				WorkingDir: "/projects/workshop/labs/inventory-quarkus",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "inventory---create-component",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo create --app coolstore --project my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Inventory - Create Component",
-				} ,
-				WorkingDir: "/projects/workshop/labs/inventory-quarkus",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "inventory---push",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo push`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Inventory - Push",
-				} ,
-				WorkingDir: "/projects/workshop/labs/inventory-quarkus",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "catalog---build",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `mvn clean package -DskipTests`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Catalog - Build",
-				} ,
-				WorkingDir: "/projects/workshop/labs/catalog-spring-boot",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "catalog---run",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `mvn spring-boot:run`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Catalog - Run",
-				} ,
-				WorkingDir: "/projects/workshop/labs/catalog-spring-boot",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "catalog---create-component",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo create --app coolstore --project my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Catalog - Create Component",
-				} ,
-				WorkingDir: "/projects/workshop/labs/catalog-spring-boot",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "catalog---push",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo push`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Catalog - Push",
-				} ,
-				WorkingDir: "/projects/workshop/labs/catalog-spring-boot",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "gateway---create-component",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo create --app coolstore --project my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Gateway - Create Component",
-				} ,
-				WorkingDir: "/projects/workshop/labs/gateway-dotnet",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "gateway---push",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `odo push`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Gateway - Push",
-				} ,
-				WorkingDir: "/projects/workshop/labs/gateway-dotnet",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "catalog---generate-traffic",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `for i in {1..60}; do if [ $(curl -s -w "%{http_code}" -o /dev/null http://catalog-coolstore.my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}.svc:8080/actuator/health) == "200" ]; then MSG="\\033[0;32mThe request to Catalog Service has succeeded\\033[0m"; else MSG="\\033[0;31mERROR - The request to Catalog Service has failed\\033[0m"; fi;echo -e $MSG;sleep 2s; done`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Catalog - Generate Traffic",
-				} ,
-				WorkingDir: "/projects/workshop/labs/catalog-spring-boot",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "catalog---add-podaffinity",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `oc patch deployment/catalog-coolstore -n my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14} --patch '{"spec": {"template": {"spec": {"affinity": {"podAffinity": {"requiredDuringSchedulingIgnoredDuringExecution": [{"labelSelector": { "matchExpressions": [{"key" : "component", "operator" : "In", "values": ["catalog"]}]}, "topologyKey" : "kubernetes.io/hostname"}]}}}'`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Catalog - Add PodAffinity",
-				} ,
-				WorkingDir: "/projects/workshop/labs",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "probes---configure-gateway--web",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `oc project my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}; oc set probe deployment/gateway-coolstore  --liveness --readiness --period-seconds=5 --get-url=http://:8080/health;oc set probe deployment/web-coolstore  --liveness --readiness --period-seconds=5 --get-url=http://:8080/;echo "Health Probes Done"`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Probes - Configure Gateway & Web",
-				} ,
-				WorkingDir: "/projects/workshop",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "gateway---generate-traffic",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `./gateway_generate_traffic.sh cn-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Gateway - Generate Traffic",
-				} ,
-				WorkingDir: "/projects/workshop/.tasks",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "inner-loop---deploy-coolstore",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `./inner_loop_deploy_coolstore.sh my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Inner Loop - Deploy Coolstore",
-				} ,
-				WorkingDir: "/projects/workshop/.tasks",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "inventory---commit",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `git init; git remote add origin http://gitea-server.gitea.svc:3000/${DEVWORKSPACE_NAMESPACE%-devspaces}/inventory-quarkus.git; git add *; git commit -m "Initial"; git push http://${DEVWORKSPACE_NAMESPACE%-devspaces}:openshift@gitea-server.gitea.svc:3000/${DEVWORKSPACE_NAMESPACE%-devspaces}/inventory-quarkus.git`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Inventory - Commit",
-				} ,
-				WorkingDir: "/projects/workshop/labs/inventory-quarkus",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "gitops---export-coolstore",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `./gitops_export_coolstore.sh my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14} cn-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "GitOps - Export Coolstore",
-				} ,
-				WorkingDir: "/projects/workshop/.tasks",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "pipeline---deploy-coolstore",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `oc project cn-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14} && ./pipeline_deploy_coolstore.sh cn-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Pipeline - Deploy Coolstore",
-				} ,
-				WorkingDir: "/projects/workshop/.tasks",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "gitops---commit-inventory",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `git init; git remote add origin http://gitea-server.gitea.svc:3000/${DEVWORKSPACE_NAMESPACE%-devspaces}/inventory-gitops.git 2> /dev/null; git add *; git commit -m "Initial Inventory GitOps"; git push http://${DEVWORKSPACE_NAMESPACE%-devspaces}:openshift@gitea-server.gitea.svc:3000/${DEVWORKSPACE_NAMESPACE%-devspaces}/inventory-gitops.git`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "GitOps - Commit Inventory",
-				} ,
-				WorkingDir: "/projects/workshop/labs/gitops/inventory-quarkus",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "gitops---commit--configure-coolstore",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `./gitops_commit_configure_coolstore.sh ${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "GitOps - Commit & Configure Coolstore",
-				} ,
-				WorkingDir: "/projects/workshop/.tasks",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "service-mesh---deploy-catalog-and-gateway",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `oc patch deployment/catalog-coolstore --patch '{"spec": {"template": {"metadata": {"annotations": {"sidecar.istio.io/inject": "true"}}}' -n cn-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14} && oc patch deployment/gateway-coolstore --patch '{"spec": {"template": {"metadata": {"annotations": {"sidecar.istio.io/inject": "true"}}}' -n cn-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14} `,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "Service Mesh - Deploy Catalog and Gateway",
-				} ,
-				WorkingDir: "/projects/workshop/labs",
-				Component: "workshop-tools",
-				},
-			},
-		},
-		{
-		Id: "openshift---cleanup",
-		CommandUnion: workspaces.CommandUnion {
-			Exec: &workspaces.ExecCommand{
-				CommandLine: `git checkout .; git clean -fd; git clean -f; oc delete project my-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}; oc delete deployment,deploymentconfig,buildconfig,imagestream,route,secret,configmap,pvc,service,pipeline,pipelinerun --all --namespace cn-project${DEVWORKSPACE_NAMESPACE:4:${#DEVWORKSPACE_NAMESPACE}-14}`,
-				LabeledCommand: workspaces.LabeledCommand{
-					Label: "OpenShift - Cleanup",
-				} ,
-				WorkingDir: "/projects/workshop",
-				Component: "workshop-tools",
-				},
-			},
-		},																																																									
+	// use supplied commands
+	commands, err := devObj.Data.GetCommands(common.DevfileOptions{})
+	if err != nil {
+		return nil
 	}
 
-	projects := []workspaces.Project {
-		{
-			Name: "workshop",
-			Attributes: attributes.Attributes{
-				"source-origin": jsonBranch,
-			},
-			ProjectSource: workspaces.ProjectSource {
-			Git: &workspaces.GitProjectSource {
-				GitLikeProjectSource: workspaces.GitLikeProjectSource{
-					CheckoutFrom: &workspaces.CheckoutFrom{
-						Revision: version,
-					},
-					Remotes: map[string]string{
-						"origin": "https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop.git",
-						},
-					},
-				},
-			},
-		},
+	// use supplied projects
+	projects, err := devObj.Data.GetProjects(common.DevfileOptions{})
+	if err != nil {
+		return nil
 	}
 
-	envs := []workspaces.EnvVar {
-		{
-			Name: "MAVEN_OPTS",
-			Value: "-Xmx2048m -Duser.home=/home/developer",
-		},
-		{
-			Name: "MAVEN_MIRROR_URL",
-			Value: "http://nexus.opentlc-shared.svc:8081/repository/maven-all-public",
-		},
+	// use supplied container (inside component)
+	suppliedComponents, err := devObj.Data.GetComponents(common.DevfileOptions{})
+	if err != nil {
+		return nil
 	}
-
-	mountSource := true
-	secure := false
-	container := &workspaces.ContainerComponent{
-		Container: workspaces.Container{
-			CpuRequest: "80m",
-			Command: []string {"/checode/entrypoint-volume.sh"},
-			Env: envs,
-			MemoryRequest: "512Mi",
-			SourceMapping: "/projects",
-			CpuLimit: "1500m",
-			VolumeMounts: []workspaces.VolumeMount {
-				{
-					Name: "m2",
-					Path: "/home/developer/.m2",
-				},
-				{
-					Name: "checode",
-					Path: "/checode",
-					},
-				},
-			MemoryLimit: "3Gi",
-			Image: "quay.io/redhat-emea-ssa-team/workshop-tools:"+version,
-			Args: []string { "sh", "-c", "${PLUGIN_REMOTE_ENDPOINT_EXECUTABLE}"},
-			MountSources: &mountSource,
-		},
-		Endpoints: []workspaces.Endpoint{
-			{
-				Name: "8080-port",
-				Exposure: workspaces.PublicEndpointExposure,
-				Protocol: workspaces.HTTPEndpointProtocol,
-				TargetPort: 8080,
-				Attributes: attributes.Attributes{
-					"protocol": jsonHttp,
-					},
-			},
-			{
-				Name: "9000-port",
-				Exposure: workspaces.PublicEndpointExposure,
-				Protocol: workspaces.HTTPEndpointProtocol,
-				TargetPort: 9000,
-				Attributes: attributes.Attributes{
-					"protocol": jsonHttp,
-					},
-			},
-			{
-				Name: "5005-port",
-				Exposure: workspaces.InternalEndpointExposure,
-				Protocol: workspaces.HTTPEndpointProtocol,
-				TargetPort: 5005,
-				Attributes: attributes.Attributes{
-					"protocol": jsonHttp,
-					"public": jsonFalse,
-					},
-			},
-			{
-				Name: "che-code",
-				Exposure: workspaces.PublicEndpointExposure,
-				Protocol: workspaces.HTTPSEndpointProtocol,
-				TargetPort: 3100,
-				Path: "?tkn=eclipse-che",
-				Secure: &secure,
-				Attributes: attributes.Attributes{
-					"contributed-by": jsonCheCodeEclipse,
-					"discoverable": jsonFalse,
-					"urlRewriteSupported": jsonTrue,
-					"type": jsonMain,
-					"cookiesAuthEnabled": jsonTrue,
-					},
-				},
-			{
-				Name: "code-redirect-1",
-				Exposure: workspaces.PublicEndpointExposure,
-				Protocol: workspaces.HTTPEndpointProtocol,
-				TargetPort: 13131,
-				Attributes: attributes.Attributes{
-					"contributed-by": jsonCheCodeEclipse,
-					"discoverable": jsonFalse,
-					"urlRewriteSupported": jsonTrue,
-					},
-				},
-			{
-				Name: "code-redirect-2",
-				Exposure: workspaces.PublicEndpointExposure,
-				Protocol: workspaces.HTTPEndpointProtocol,
-				TargetPort: 13132,
-				Attributes: attributes.Attributes{
-					"contributed-by": jsonCheCodeEclipse,
-					"discoverable": jsonFalse,
-					"urlRewriteSupported": jsonTrue,
-					},
-				},
-			{
-				Name: "code-redirect-3",
-				Exposure: workspaces.PublicEndpointExposure,
-				Protocol: workspaces.HTTPEndpointProtocol,
-				TargetPort: 13133,
-				Attributes: attributes.Attributes{
-					"contributed-by": jsonCheCodeEclipse,
-					"discoverable": jsonFalse,
-					"urlRewriteSupported": jsonTrue,
-					},
-			},
-		},
-	}
+	
+	container := suppliedComponents[0].Container
 
 	components := []workspaces.Component {
 		{
@@ -868,7 +526,6 @@ func NewDevWorkspace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name
 				"che-code.eclipse.org/contributed-container": v1.JSON{Raw: []byte(`"workshop-tools"`) },
 				"che-code.eclipse.org/original-cpuLimit": v1.JSON{Raw: []byte(`"1000m"`) },
 				"che-code.eclipse.org/original-cpuRequest": v1.JSON{Raw: []byte(`"50m"`) },
-				"che-code.eclipse.org/original-entry-point": v1.JSON{Raw: []byte(`["/home/developer/entrypoint.sh"]`) },
 				"che-code.eclipse.org/original-memoryLimit": v1.JSON{Raw: []byte(`"2048Mi"`) },
 				"che-code.eclipse.org/original-memoryRequest": v1.JSON{Raw: []byte(`"256Mi"`) },
 			},
