@@ -7,6 +7,7 @@ require (
 	github.com/argoproj-labs/argocd-operator v0.1.0
 	github.com/argoproj/argo-cd/v2 v2.1.6
 	github.com/devfile/api/v2 v2.2.0
+	github.com/devfile/library v1.3.0
 	github.com/eclipse-che/che-operator v0.0.0-20221025114737-25d1979b0680
 	github.com/emicklei/go-restful v2.11.1+incompatible // indirect
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
@@ -16,8 +17,7 @@ require (
 	github.com/operator-framework/api v0.10.0
 	github.com/operator-framework/operator-sdk v0.18.2
 	github.com/prometheus/common v0.26.0
-	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e
-	gopkg.in/tomb.v2 v2.0.0-20161208151619-d5d1b5820637 // indirect
+	golang.org/x/crypto v0.0.0-20211117183948-ae814b36b871
 	k8s.io/api v0.22.3
 	k8s.io/apiextensions-apiserver v0.22.2
 	k8s.io/apimachinery v0.22.3
