@@ -7,16 +7,15 @@ This workshop operator targets RHPDS which include a known set of regular users:
 To use this workshop on other providers eg ROSA you will need a htpasswd file and some OpenShift
 configuration to achieve the same user base.
 
-You will need to be Cluster admin
+You will need to be Cluster admin and not have an existing htpasswd provider
 
-Run these simple scripts to add the simple password file for 20 users
+Run these simple scripts to add the simple htpasswd password file for 20 users
 
 [source,bash]
 ----
-oc delete secret htpasswd-secret -n openshift-config
-curl https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/htpasswd/htpasswd > htpasswd
+curl https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.4/htpasswd/htpasswd > htpasswd
 oc create secret generic htpasswd-secret --from-file=htpasswd=htpasswd -n openshift-config
-oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.1/htpasswd/oauth_htpasswd_provider -n openshift-config
+oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.4/htpasswd/oauth_htpasswd_provider -n openshift-config
 ----
 
 If you want, you can build your own password file like this:
@@ -28,4 +27,13 @@ for i in {2..20}
 do
 htpasswd -B -b htpasswd user$i openshift
 done
+----
+
+If you want to append new users to an existing htpasswd file (using htpasswd-secret) then run these commands or this script *updatehtpasswd.sh*
+[source,bash]
+----
+oc get secret htpasswd-secret -ojsonpath={.data.htpasswd} -n openshift-config | base64 --decode > users.htpasswd
+curl https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.4/htpasswd/htpasswd >> users.htpasswd
+oc create secret generic htpass-secret --from-file=htpasswd=users.htpasswd --dry-run=client -o yaml -n openshift-config | oc replace -f -
+oc adm policy add-cluster-role-to-user cluster-admin opentlc-mgr
 ----
