@@ -9,7 +9,7 @@ spec:
     password: openshift
   source:
     gitURL: https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop
-    gitBranch: "6.4"
+    gitBranch: "6.5"
   infrastructure:
     guide:
       scholars:
@@ -21,7 +21,7 @@ spec:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: devspacesoperator.v3.3.0
+        clusterServiceVersion: devspacesoperator.v3.5.0
       openshiftOAuth: true
     gitea:
       enabled: true
@@ -38,8 +38,8 @@ spec:
     pipeline:
       enabled: true
       operatorHub:
-        channel: pipelines-1.7
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.7.3
+        channel: pipelines-1.9
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.9
     project:
       enabled: true
       stagingName: cn-project
