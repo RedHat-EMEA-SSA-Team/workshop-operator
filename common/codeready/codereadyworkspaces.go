@@ -74,7 +74,7 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			},
 			Storage: che.CheClusterSpecStorage{
 				PvcStrategy:       "common",
-				PvcClaimSize:      "1Gi",
+				PvcClaimSize:      "10Gi",
 			},
 			DevWorkspace: che.CheClusterSpecDevWorkspace{
 				SecondsOfInactivityBeforeIdling: &i,  // unlimited before timeout

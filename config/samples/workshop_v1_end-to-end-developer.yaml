@@ -39,7 +39,7 @@ spec:
       enabled: true
       operatorHub:
         channel: pipelines-1.9
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.9
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.9.2
     project:
       enabled: true
       stagingName: cn-project

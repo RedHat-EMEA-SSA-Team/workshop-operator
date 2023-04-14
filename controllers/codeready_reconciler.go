@@ -273,6 +273,7 @@ func (r *WorkshopReconciler) initWorkspace(workshop *workshopv1.Workshop, userna
 
 	const userNameAppend = "-devspaces"
 	const settingsCMName = "settings-xml"
+	const gitconfigCMName = "gitconfig"
 
 	// Create namespace with dev workspace annotations
 	labels := map[string]string{
@@ -324,13 +325,40 @@ func (r *WorkshopReconciler) initWorkspace(workshop *workshopv1.Workshop, userna
 		}
 
 
-	// Create settings secret inside
+	// Create settings configmap inside
 	settingsCM := kubernetes.NewConfigMapAnnotate(workshop, r.Scheme, settingsCMName, username+userNameAppend, labels, data, annotations)
 	if err := r.Create(context.TODO(), settingsCM); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created Settings.xml config map for user %s", username)
 	}
+
+
+	// Create ConfigMap with dev workspace annoations
+	labels = map[string]string{
+		"controller.devfile.io/mount-to-devworkspace": "true",
+		"controller.devfile.io/watch-configmap": "true",
+	}
+
+	annotations = map[string]string{
+		"controller.devfile.io/mount-as": "subpath",
+		"controller.devfile.io/mount-path": "/home/developer/",
+		}
+
+	// pass in a gitcofngi file to be mounted
+	data = map[string]string{
+		".gitconfig": "[user]\n  name = " + username + "\n  email = " + username + "@example.com\n",
+		}
+
+
+	// Create get config map inside
+	gitconfigCM := kubernetes.NewConfigMapAnnotate(workshop, r.Scheme, gitconfigCMName, username+userNameAppend, labels, data, annotations)
+	if err := r.Create(context.TODO(), gitconfigCM); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created Gitconfig config map for user %s", username)
+	}
+
 
 	// Create DevWorkspace Template
 	dwtemp := NewDWTemplate(workshop, r.Scheme, username+userNameAppend, appsHostnameSuffix)
