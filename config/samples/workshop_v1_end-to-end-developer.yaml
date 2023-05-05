@@ -15,13 +15,14 @@ spec:
       scholars:
         enabled: true
         guideURL:
-          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.4/index.html" 
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.4/index.html" 
+          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.5/index.html" 
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.5/index.html" 
     codeReadyWorkspace:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: devspacesoperator.v3.5.0
+#        clusterServiceVersion: devspacesoperator.v3.5.0
+        clusterServiceVersion: devspacesoperator.v3.5.0-0.1682130576.p
       openshiftOAuth: true
     gitea:
       enabled: true
