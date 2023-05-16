@@ -21,8 +21,7 @@ spec:
       enabled: true
       operatorHub:
         channel: stable
-#        clusterServiceVersion: devspacesoperator.v3.5.0
-        clusterServiceVersion: devspacesoperator.v3.5.0-0.1682130576.p
+        clusterServiceVersion: devspacesoperator.v3.5.0
       openshiftOAuth: true
     gitea:
       enabled: true
@@ -48,7 +47,7 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.2.3
+        clusterServiceVersion: servicemeshoperator.v2.3.3
       elasticSearchOperatorHub:
         channel: "stable"
       jaegerOperatorHub:
