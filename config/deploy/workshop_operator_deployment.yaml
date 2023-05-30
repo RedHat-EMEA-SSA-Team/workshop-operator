@@ -790,7 +790,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.4
+        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.5
         livenessProbe:
           httpGet:
             path: /healthz
