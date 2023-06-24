@@ -77,6 +77,7 @@ type CertManagerSpec struct {
 type GiteaSpec struct {
 	Enabled bool      `json:"enabled"`
 	Image   ImageSpec `json:"image"`
+	ServerImageTag string `json:"serverImageTag,omitempty"`
 }
 
 // GitOpsSpec ...

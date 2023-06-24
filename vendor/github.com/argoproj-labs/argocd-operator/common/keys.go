@@ -130,6 +130,9 @@ const (
 	// ArgoCDKeyResourceInclusions is the configuration key for resource inclusions.
 	ArgoCDKeyResourceInclusions = "resource.inclusions"
 
+	// ArgoCDKeyResourceTrackingMethod is the configuration key for resource tracking method
+	ArgoCDKeyResourceTrackingMethod = "application.resourceTrackingMethod"
+
 	// ArgoCDRepoImageEnvName is the environment variable used to get the image
 	// to used for the Dex container.
 	ArgoCDRepoImageEnvName = "ARGOCD_REPOSERVER_IMAGE"
@@ -152,6 +155,12 @@ const (
 	// ArgoCDKeyStatusBadgeEnabled is the configuration key for enabling the status badge.
 	ArgoCDKeyStatusBadgeEnabled = "statusbadge.enabled"
 
+	// ArgoCDKeyBannerContent is the configuration key for a banner message content.
+	ArgoCDKeyBannerContent = "ui.bannercontent"
+
+	// ArgoCDKeyBannerURL is the configuration key for a banner message URL.
+	ArgoCDKeyBannerURL = "ui.bannerurl"
+
 	// ArgoCDKeyTLSCACert is the key for TLS CA certificates.
 	ArgoCDKeyTLSCACert = "ca.crt"
 
@@ -166,10 +175,6 @@ const (
 
 	// ArgoCDKeyUsersAnonymousEnabled is the configuration key for anonymous user access.
 	ArgoCDKeyUsersAnonymousEnabled = "users.anonymous.enabled"
-
-	// ArgoCDApplicationSetEnvName is the environment variable used to get the image
-	// for the ApplicationSet controller
-	ArgoCDApplicationSetEnvName = "ARGOCD_APPLICATIONSET_IMAGE"
 
 	// ArgoCDDexImageEnvName is the environment variable used to get the image
 	// to used for the Dex container.
@@ -210,4 +215,10 @@ const (
 
 	// ArgoCDManagedByLabel is needed to identify namespace managed by an instance on ArgoCD
 	ArgoCDManagedByLabel = "argocd.argoproj.io/managed-by"
+
+	// ArgoCDControllerClusterRoleEnvName is an environment variable to specify a custom cluster role for Argo CD application controller
+	ArgoCDControllerClusterRoleEnvName = "CONTROLLER_CLUSTER_ROLE"
+
+	// ArgoCDServerClusterRoleEnvName is an environment variable to specify a custom cluster role for Argo CD server
+	ArgoCDServerClusterRoleEnvName = "SERVER_CLUSTER_ROLE"
 )

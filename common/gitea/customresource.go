@@ -10,7 +10,12 @@ import (
 )
 
 func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
-	name string, namespace string, labels map[string]string) *Gitea {
+	name string, namespace string, imageTag string, labels map[string]string) *Gitea {
+
+	if imageTag == "" {
+		imageTag = "latest"
+	}
+
 	cr := &Gitea{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -21,6 +26,7 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 			GiteaVolumeSize:      "4Gi",
 			GiteaSsl:             true,
 			PostgresqlVolumeSize: "4Gi",
+			GiteaImageTag: imageTag,
 		},
 	}
 
@@ -41,6 +47,9 @@ func NewCustomResourceValidation() *apiextensionsv1.CustomResourceValidation {
 					Type: "object",
 					Properties: map[string]apiextensionsv1.JSONSchemaProps{
 						"giteaVolumeSize": {
+							Type: "string",
+						},
+						"giteaImageTag": {
 							Type: "string",
 						},
 						"giteaSsl": {

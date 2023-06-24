@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.16 as builder
+FROM golang:1.18 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
@@ -8,10 +8,6 @@ COPY go.sum go.sum
 # cache deps before building and copying source so that we don't need to re-download as much
 # and so that source changes don't invalidate our downloaded layer
 RUN go mod download
-
-# TEMPORARY FIX - Conflict between kube-openapi & go-openapi in the ArgoCD
-# To remove with the module ArgoCD will be ready for Kubernetes 1.22
-RUN sed -i 's/github\.com\/go\-openapi\/spec/k8s\.io\/kube\-openapi\/pkg\/validation\/spec/g' /go/pkg/mod/github.com/argoproj/argo-cd/v2@v2.1.6/pkg/apis/application/v1alpha1/openapi_generated.go
 
 # Copy the go source
 COPY main.go main.go

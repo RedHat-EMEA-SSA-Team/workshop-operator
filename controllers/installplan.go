@@ -6,7 +6,8 @@ import (
 
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
-	"github.com/prometheus/common/log"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
+
 	"k8s.io/apimachinery/pkg/types"
 )
 

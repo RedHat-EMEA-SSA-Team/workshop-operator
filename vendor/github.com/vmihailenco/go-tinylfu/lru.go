@@ -4,12 +4,12 @@ import "container/list"
 
 // Cache is an LRU cache.  It is not safe for concurrent access.
 type lruCache struct {
-	data map[uint64]*list.Element
+	data map[string]*list.Element
 	cap  int
 	ll   *list.List
 }
 
-func newLRU(cap int, data map[uint64]*list.Element) *lruCache {
+func newLRU(cap int, data map[string]*list.Element) *lruCache {
 	return &lruCache{
 		data: data,
 		cap:  cap,

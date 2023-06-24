@@ -7,7 +7,9 @@ import (
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/redis"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/usernamedistribution"
-	"github.com/prometheus/common/log"
+	
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"

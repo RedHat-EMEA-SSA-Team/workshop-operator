@@ -16,6 +16,7 @@ type GiteaSpec struct {
 	GiteaSsl             bool   `json:"giteaSsl"`
 	GiteaServiceName     string `json:"giteaServiceName,omitempty"`
 	PostgresqlVolumeSize string `json:"postgresqlVolumeSize"`
+	GiteaImageTag      	 string `json:"giteaImageTag"`
 }
 
 type GiteaList struct {

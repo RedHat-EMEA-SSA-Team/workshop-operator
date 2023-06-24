@@ -9,7 +9,7 @@ spec:
     password: openshift
   source:
     gitURL: https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop
-    gitBranch: "6.5"
+    gitBranch: "6.6"
   infrastructure:
     guide:
       scholars:
@@ -21,18 +21,19 @@ spec:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: devspacesoperator.v3.5.0
+        clusterServiceVersion: devspacesoperator.v3.6.0
       openshiftOAuth: true
     gitea:
       enabled: true
       image:
         name: quay.io/gpte-devops-automation/gitea-operator
         tag: v1.2.3
+      serverImageTag: "1.19"
     gitops:
       enabled: true
       operatorHub:
-        channel: gitops-1.5
-        clusterServiceVersion: openshift-gitops-operator.v1.5.5
+        channel: gitops-1.6
+        clusterServiceVersion: openshift-gitops-operator.v1.6.6
     nexus:
       enabled: true
     pipeline:
@@ -47,7 +48,7 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.3.3
+        clusterServiceVersion: servicemeshoperator.v2.4.0
       elasticSearchOperatorHub:
         channel: "stable"
       jaegerOperatorHub:

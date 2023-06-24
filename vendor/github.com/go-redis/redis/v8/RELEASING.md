@@ -3,7 +3,7 @@
 1. Run `release.sh` script which updates versions in go.mod files and pushes a new branch to GitHub:
 
 ```shell
-TAG=v1.0.0 ./scripts/release.sh
+./scripts/release.sh -t v1.0.0
 ```
 
 2. Open a pull request and wait for the build to finish.
@@ -11,5 +11,11 @@ TAG=v1.0.0 ./scripts/release.sh
 3. Merge the pull request and run `tag.sh` to create tags for packages:
 
 ```shell
-TAG=v1.0.0 ./scripts/tag.sh
+./scripts/tag.sh -t v1.0.0
+```
+
+4. Push the tags:
+
+```shell
+git push origin --tags
 ```

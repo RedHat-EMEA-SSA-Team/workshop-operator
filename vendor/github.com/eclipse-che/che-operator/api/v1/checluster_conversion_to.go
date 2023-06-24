@@ -78,7 +78,6 @@ func (src *CheCluster) convertTo_GitServices(dst *chev2.CheCluster) error {
 			dst.Spec.GitServices.GitHub,
 			chev2.GitHubService{
 				SecretName: github.SecretName,
-				Endpoint:   github.Endpoint,
 			})
 	}
 
@@ -87,7 +86,6 @@ func (src *CheCluster) convertTo_GitServices(dst *chev2.CheCluster) error {
 			dst.Spec.GitServices.GitLab,
 			chev2.GitLabService{
 				SecretName: gitlab.SecretName,
-				Endpoint:   gitlab.Endpoint,
 			})
 	}
 
@@ -96,7 +94,6 @@ func (src *CheCluster) convertTo_GitServices(dst *chev2.CheCluster) error {
 			dst.Spec.GitServices.BitBucket,
 			chev2.BitBucketService{
 				SecretName: bitbucket.SecretName,
-				Endpoint:   bitbucket.Endpoint,
 			})
 	}
 
@@ -104,7 +101,6 @@ func (src *CheCluster) convertTo_GitServices(dst *chev2.CheCluster) error {
 }
 
 func (src *CheCluster) convertTo_Status(dst *chev2.CheCluster) error {
-	dst.Status.PostgresVersion = src.Spec.Database.PostgresVersion
 	dst.Status.CheURL = src.Status.CheURL
 	dst.Status.CheVersion = src.Status.CheVersion
 	dst.Status.DevfileRegistryURL = src.Status.DevfileRegistryURL
@@ -166,6 +162,11 @@ func (src *CheCluster) convertTo_DevEnvironments(dst *chev2.CheCluster) error {
 	dst.Spec.DevEnvironments.DefaultComponents = src.Spec.Server.WorkspaceDefaultComponents
 	dst.Spec.DevEnvironments.SecondsOfInactivityBeforeIdling = src.Spec.DevWorkspace.SecondsOfInactivityBeforeIdling
 	dst.Spec.DevEnvironments.SecondsOfRunBeforeIdling = src.Spec.DevWorkspace.SecondsOfRunBeforeIdling
+	if src.Spec.Server.CheWorkspaceClusterRole != "" {
+		dst.Spec.DevEnvironments.User = &chev2.UserConfiguration{
+			ClusterRoles: strings.Split(src.Spec.Server.CheClusterRoles, ","),
+		}
+	}
 
 	if err := src.convertTo_Workspaces_Storage(dst); err != nil {
 		return err
@@ -270,10 +271,6 @@ func (src *CheCluster) convertTo_Components(dst *chev2.CheCluster) error {
 		return err
 	}
 
-	if err := src.convertTo_Components_Database(dst); err != nil {
-		return err
-	}
-
 	if err := src.convertTo_Components_Metrics(dst); err != nil {
 		return err
 	}
@@ -290,7 +287,11 @@ func (src *CheCluster) convertTo_Components(dst *chev2.CheCluster) error {
 }
 
 func (src *CheCluster) convertTo_Components_DevWorkspace(dst *chev2.CheCluster) error {
-	dst.Spec.Components.DevWorkspace.RunningLimit = src.Spec.DevWorkspace.RunningLimit
+	if src.Spec.DevWorkspace.RunningLimit != "" {
+		runningLimit, err := strconv.ParseInt(src.Spec.DevWorkspace.RunningLimit, 10, 64)
+		dst.Spec.DevEnvironments.MaxNumberOfRunningWorkspacesPerUser = pointer.Int64Ptr(runningLimit)
+		return err
+	}
 	return nil
 }
 
@@ -429,42 +430,6 @@ func (src *CheCluster) convertTo_Components_DevfileRegistry(dst *chev2.CheCluste
 		src.Spec.Server.DevfileRegistryEnv,
 	)
 
-	return nil
-}
-
-func (src *CheCluster) convertTo_Components_Database(dst *chev2.CheCluster) error {
-	dst.Spec.Components.Database.CredentialsSecretName = src.Spec.Database.ChePostgresSecret
-
-	if src.Spec.Database.ChePostgresSecret == "" && src.Spec.Database.ChePostgresUser != "" && src.Spec.Database.ChePostgresPassword != "" {
-		if err := createCredentialsSecret(
-			src.Spec.Database.ChePostgresUser,
-			src.Spec.Database.ChePostgresPassword,
-			constants.DefaultPostgresCredentialsSecret,
-			src.ObjectMeta.Namespace); err != nil {
-			return err
-		}
-		dst.Spec.Components.Database.CredentialsSecretName = constants.DefaultPostgresCredentialsSecret
-	}
-
-	dst.Spec.Components.Database.Deployment = toCheV2Deployment(
-		constants.PostgresName,
-		src.Spec.Database.PostgresImage,
-		src.Spec.Database.PostgresImagePullPolicy,
-		src.Spec.Database.ChePostgresContainerResources.Requests.Memory,
-		src.Spec.Database.ChePostgresContainerResources.Limits.Memory,
-		src.Spec.Database.ChePostgresContainerResources.Requests.Cpu,
-		src.Spec.Database.ChePostgresContainerResources.Limits.Cpu,
-		nil,
-		nil,
-		src.Spec.Database.PostgresEnv,
-	)
-
-	dst.Spec.Components.Database.ExternalDb = src.Spec.Database.ExternalDb
-	dst.Spec.Components.Database.PostgresDb = src.Spec.Database.ChePostgresDb
-	dst.Spec.Components.Database.PostgresHostName = src.Spec.Database.ChePostgresHostName
-	dst.Spec.Components.Database.PostgresPort = src.Spec.Database.ChePostgresPort
-
-	dst.Spec.Components.Database.Pvc = toCheV2Pvc(src.Spec.Database.PvcClaimSize, src.Spec.Storage.PostgresPVCStorageClassName)
 	return nil
 }
 
@@ -667,10 +632,12 @@ func toCheV2Deployment(
 		resources.Requests = &chev2.ResourceList{}
 
 		if memoryRequest != "" {
-			resources.Requests.Memory = resource.MustParse(memoryRequest)
+			m := resource.MustParse(memoryRequest)
+			resources.Requests.Memory = &m
 		}
 		if cpuRequest != "" {
-			resources.Requests.Cpu = resource.MustParse(cpuRequest)
+			c := resource.MustParse(cpuRequest)
+			resources.Requests.Cpu = &c
 		}
 	}
 
@@ -681,10 +648,12 @@ func toCheV2Deployment(
 		resources.Limits = &chev2.ResourceList{}
 
 		if memoryLimit != "" {
-			resources.Limits.Memory = resource.MustParse(memoryLimit)
+			m := resource.MustParse(memoryLimit)
+			resources.Limits.Memory = &m
 		}
 		if cpuLimit != "" {
-			resources.Limits.Cpu = resource.MustParse(cpuLimit)
+			c := resource.MustParse(cpuLimit)
+			resources.Limits.Cpu = &c
 		}
 	}
 

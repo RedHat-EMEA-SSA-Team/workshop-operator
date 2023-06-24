@@ -10,7 +10,6 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/klauspost/compress/s2"
-	"github.com/vmihailenco/bufpool"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/sync/singleflight"
 )
@@ -80,38 +79,66 @@ func (item *Item) value() (interface{}, error) {
 }
 
 func (item *Item) ttl() time.Duration {
+	const defaultTTL = time.Hour
+
 	if item.TTL < 0 {
 		return 0
 	}
-	if item.TTL != 0 && item.TTL < time.Second {
-		log.Printf("too short TTL for key=%q: %s", item.Key, item.TTL)
-		return time.Hour
+
+	if item.TTL != 0 {
+		if item.TTL < time.Second {
+			log.Printf("too short TTL for key=%q: %s", item.Key, item.TTL)
+			return defaultTTL
+		}
+		return item.TTL
 	}
-	return item.TTL
+
+	return defaultTTL
 }
 
 //------------------------------------------------------------------------------
+type (
+	MarshalFunc   func(interface{}) ([]byte, error)
+	UnmarshalFunc func([]byte, interface{}) error
+)
 
 type Options struct {
 	Redis        rediser
 	LocalCache   LocalCache
 	StatsEnabled bool
+	Marshal      MarshalFunc
+	Unmarshal    UnmarshalFunc
 }
 
 type Cache struct {
 	opt *Options
 
-	group   singleflight.Group
-	bufpool bufpool.Pool
+	group singleflight.Group
+
+	marshal   MarshalFunc
+	unmarshal UnmarshalFunc
 
 	hits   uint64
 	misses uint64
 }
 
 func New(opt *Options) *Cache {
-	return &Cache{
+	cacher := &Cache{
 		opt: opt,
 	}
+
+	if opt.Marshal == nil {
+		cacher.marshal = cacher._marshal
+	} else {
+		cacher.marshal = opt.Marshal
+	}
+
+	if opt.Unmarshal == nil {
+		cacher.unmarshal = cacher._unmarshal
+	} else {
+		cacher.unmarshal = opt.Unmarshal
+	}
+	return cacher
 }
 
 // Set caches the item.
@@ -131,7 +158,7 @@ func (cd *Cache) set(item *Item) ([]byte, bool, error) {
 		return nil, false, err
 	}
 
-	if cd.opt.LocalCache != nil {
+	if cd.opt.LocalCache != nil && !item.SkipLocalCache {
 		cd.opt.LocalCache.Set(item.Key, b)
 	}
 
@@ -142,15 +169,18 @@ func (cd *Cache) set(item *Item) ([]byte, bool, error) {
 		return b, true, nil
 	}
 
+	ttl := item.ttl()
+	if ttl == 0 {
+		return b, true, nil
+	}
+
 	if item.SetXX {
-		return b, true, cd.opt.Redis.SetXX(item.Context(), item.Key, b, item.ttl()).Err()
+		return b, true, cd.opt.Redis.SetXX(item.Context(), item.Key, b, ttl).Err()
 	}
-
 	if item.SetNX {
-		return b, true, cd.opt.Redis.SetNX(item.Context(), item.Key, b, item.ttl()).Err()
+		return b, true, cd.opt.Redis.SetNX(item.Context(), item.Key, b, ttl).Err()
 	}
-
-	return b, true, cd.opt.Redis.Set(item.Context(), item.Key, b, item.ttl()).Err()
+	return b, true, cd.opt.Redis.Set(item.Context(), item.Key, b, ttl).Err()
 }
 
 // Exists reports whether value for the given key exists.
@@ -180,7 +210,7 @@ func (cd *Cache) get(
 	if err != nil {
 		return err
 	}
-	return cd.Unmarshal(b, value)
+	return cd.unmarshal(b, value)
 }
 
 func (cd *Cache) getBytes(ctx context.Context, key string, skipLocalCache bool) ([]byte, error) {
@@ -234,7 +264,7 @@ func (cd *Cache) Once(item *Item) error {
 		return nil
 	}
 
-	if err := cd.Unmarshal(b, item.Value); err != nil {
+	if err := cd.unmarshal(b, item.Value); err != nil {
 		if cached {
 			_ = cd.Delete(item.Context(), item.Key)
 			return cd.Once(item)
@@ -288,7 +318,17 @@ func (cd *Cache) Delete(ctx context.Context, key string) error {
 	return err
 }
 
+func (cd *Cache) DeleteFromLocalCache(key string) {
+	if cd.opt.LocalCache != nil {
+		cd.opt.LocalCache.Del(key)
+	}
+}
+
 func (cd *Cache) Marshal(value interface{}) ([]byte, error) {
+	return cd.marshal(value)
+}
+
+func (cd *Cache) _marshal(value interface{}) ([]byte, error) {
 	switch value := value.(type) {
 	case nil:
 		return nil, nil
@@ -298,22 +338,12 @@ func (cd *Cache) Marshal(value interface{}) ([]byte, error) {
 		return []byte(value), nil
 	}
 
-	buf := cd.bufpool.Get()
-	defer cd.bufpool.Put(buf)
-
-	enc := msgpack.GetEncoder()
-	enc.Reset(buf)
-	enc.UseCompactInts(true)
-
-	err := enc.Encode(value)
-
-	msgpack.PutEncoder(enc)
-
+	b, err := msgpack.Marshal(value)
 	if err != nil {
 		return nil, err
 	}
 
-	return compress(buf.Bytes()), nil
+	return compress(b), nil
 }
 
 func compress(data []byte) []byte {
@@ -333,6 +363,10 @@ func compress(data []byte) []byte {
 }
 
 func (cd *Cache) Unmarshal(b []byte, value interface{}) error {
+	return cd.unmarshal(b, value)
+}
+
+func (cd *Cache) _unmarshal(b []byte, value interface{}) error {
 	if len(b) == 0 {
 		return nil
 	}
@@ -356,15 +390,8 @@ func (cd *Cache) Unmarshal(b []byte, value interface{}) error {
 	case s2Compression:
 		b = b[:len(b)-1]
 
-		n, err := s2.DecodedLen(b)
-		if err != nil {
-			return err
-		}
-
-		buf := bufpool.Get(n)
-		defer bufpool.Put(buf)
-
-		b, err = s2.Decode(buf.Bytes(), b)
+		var err error
+		b, err = s2.Decode(nil, b)
 		if err != nil {
 			return err
 		}

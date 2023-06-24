@@ -11,15 +11,13 @@
 [![Documentation](https://img.shields.io/badge/redis-documentation-informational)](https://redis.uptrace.dev/)
 [![Chat](https://discordapp.com/api/guilds/752070105847955518/widget.png)](https://discord.gg/rWtp5Aj)
 
-- To ask questions, join [Discord](https://discord.gg/rWtp5Aj) or use
-  [Discussions](https://github.com/go-redis/redis/discussions).
-- [Newsletter](https://blog.uptrace.dev/pages/newsletter.html) to get latest updates.
+- Join [Discord](https://discord.gg/rWtp5Aj) to ask questions.
 - [Documentation](https://redis.uptrace.dev)
 - [Reference](https://pkg.go.dev/github.com/go-redis/redis/v8?tab=doc)
 - [Examples](https://pkg.go.dev/github.com/go-redis/redis/v8?tab=doc#pkg-examples)
 - [RealWorld example app](https://github.com/uptrace/go-treemux-realworld-example-app)
 
-Other projects you may like:
+My other projects:
 
 - [Bun](https://bun.uptrace.dev) - fast and simple SQL client for PostgreSQL, MySQL, and SQLite.
 - [treemux](https://github.com/vmihailenco/treemux) - high-speed, flexible, tree-based HTTP router

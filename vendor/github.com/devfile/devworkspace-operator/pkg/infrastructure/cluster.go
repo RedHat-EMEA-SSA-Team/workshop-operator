@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2019-2022 Red Hat, Inc.
+// Copyright (c) 2019-2023 Red Hat, Inc.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -58,6 +58,10 @@ func Initialize() error {
 func InitializeForTesting(currentInfrastructure Type) {
 	current = currentInfrastructure
 	initialized = true
+}
+
+func IsInitialized() bool {
+	return initialized
 }
 
 // IsOpenShift returns true if the current cluster is an OpenShift (v4.x) cluster.

@@ -12,8 +12,7 @@ import (
 	"time"
 
 	"github.com/cespare/xxhash/v2"
-	rendezvous "github.com/dgryski/go-rendezvous" //nolint
-
+	"github.com/dgryski/go-rendezvous"
 	"github.com/go-redis/redis/v8/internal"
 	"github.com/go-redis/redis/v8/internal/hashtag"
 	"github.com/go-redis/redis/v8/internal/pool"

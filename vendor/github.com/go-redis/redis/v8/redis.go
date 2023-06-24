@@ -51,7 +51,9 @@ func (hs hooks) process(
 	ctx context.Context, cmd Cmder, fn func(context.Context, Cmder) error,
 ) error {
 	if len(hs.hooks) == 0 {
-		err := fn(ctx, cmd)
+		err := hs.withContext(ctx, func() error {
+			return fn(ctx, cmd)
+		})
 		cmd.SetErr(err)
 		return err
 	}
@@ -67,7 +69,9 @@ func (hs hooks) process(
 	}
 
 	if retErr == nil {
-		retErr = fn(ctx, cmd)
+		retErr = hs.withContext(ctx, func() error {
+			return fn(ctx, cmd)
+		})
 		cmd.SetErr(retErr)
 	}
 
@@ -85,7 +89,9 @@ func (hs hooks) processPipeline(
 	ctx context.Context, cmds []Cmder, fn func(context.Context, []Cmder) error,
 ) error {
 	if len(hs.hooks) == 0 {
-		err := fn(ctx, cmds)
+		err := hs.withContext(ctx, func() error {
+			return fn(ctx, cmds)
+		})
 		return err
 	}
 
@@ -100,7 +106,9 @@ func (hs hooks) processPipeline(
 	}
 
 	if retErr == nil {
-		retErr = fn(ctx, cmds)
+		retErr = hs.withContext(ctx, func() error {
+			return fn(ctx, cmds)
+		})
 	}
 
 	for hookIndex--; hookIndex >= 0; hookIndex-- {
@@ -118,6 +126,10 @@ func (hs hooks) processTxPipeline(
 ) error {
 	cmds = wrapMultiExec(ctx, cmds)
 	return hs.processPipeline(ctx, cmds, fn)
+}
+
+func (hs hooks) withContext(ctx context.Context, fn func() error) error {
+	return fn()
 }
 
 //------------------------------------------------------------------------------
@@ -261,7 +273,7 @@ func (c *baseClient) releaseConn(ctx context.Context, cn *pool.Conn, err error) 
 		c.opt.Limiter.ReportResult(err)
 	}
 
-	if isBadConn(err, false, c.opt.Addr) {
+	if isBadConn(err, false) {
 		c.connPool.Remove(ctx, cn, err)
 	} else {
 		c.connPool.Put(ctx, cn)
@@ -710,9 +722,7 @@ type conn struct {
 	hooks // TODO: inherit hooks
 }
 
-// Conn represents a single Redis connection rather than a pool of connections.
-// Prefer running commands from Client unless there is a specific need
-// for a continuous single Redis connection.
+// Conn is like Client, but its pool contains single connection.
 type Conn struct {
 	*conn
 	ctx context.Context

@@ -15,7 +15,7 @@
 package common
 
 const (
-	// ArgoCDApplicationControllerComponent is the name of the application controller  control plane component
+	// ArgoCDApplicationControllerComponent is the name of the application controller control plane component
 	ArgoCDApplicationControllerComponent = "argocd-application-controller"
 
 	// ArgoCDApplicationControllerDefaultShardReplicas is the default number of replicas that the ArgoCD Application Controller Should Use
@@ -30,11 +30,20 @@ const (
 	// ArgoCDServerComponent is the name of the Dex server control plane component
 	ArgoCDServerComponent = "argocd-server"
 
-	// ArgoCDRedisHAComponent is the name of the Redis control plane component
+	// ArgoCDRedisComponent is the name of the Redis control plane component
+	ArgoCDRedisComponent = "argocd-redis"
+
+	// ArgoCDRedisHAComponent is the name of the Redis HA control plane component
 	ArgoCDRedisHAComponent = "argocd-redis-ha"
 
 	// ArgoCDDexServerComponent is the name of the Dex server control plane component
 	ArgoCDDexServerComponent = "argocd-dex-server"
+
+	// ArgoCDNotificationsControllerComponent is the name of the Notifications controller control plane component
+	ArgoCDNotificationsControllerComponent = "argocd-notifications-controller"
+
+	// ArgoCDOperatorGrafanaComponent is the name of the Grafana control plane component
+	ArgoCDOperatorGrafanaComponent = "argocd-grafana"
 
 	// ArgoCDDefaultAdminPasswordLength is the length of the generated default admin password.
 	ArgoCDDefaultAdminPasswordLength = 32
@@ -45,12 +54,6 @@ const (
 	// ArgoCDDefaultAdminPasswordNumSymbols is the number of symbols to use for the generated default admin password.
 	ArgoCDDefaultAdminPasswordNumSymbols = 0
 
-	// ArgoCDDefaultApplicationSetImage is the Argo CD Application Set container image to use when not specified.
-	ArgoCDDefaultApplicationSetImage = "quay.io/argoproj/argocd-applicationset"
-
-	// ArgoCDDefaultApplicationSetVersion is the Argo CD Application Set image tag to use when not specified.
-	ArgoCDDefaultApplicationSetVersion = "v0.2.0"
-
 	// ArgoCDDefaultApplicationInstanceLabelKey is the default app name as a tracking label.
 	ArgoCDDefaultApplicationInstanceLabelKey = "app.kubernetes.io/instance"
 
@@ -58,7 +61,7 @@ const (
 	ArgoCDDefaultArgoImage = "quay.io/argoproj/argocd"
 
 	// ArgoCDDefaultArgoVersion is the Argo CD container image digest to use when version not specified.
-	ArgoCDDefaultArgoVersion = "sha256:0bbcd97134f2d7c28293d4b717317f32aaf8fa816a1ffe764c1ebc390c4646d3" // v2.1.6
+	ArgoCDDefaultArgoVersion = "sha256:f887f854ab22f7f29f915aae2b765f2948d1555d61e9ce3ca9e659f8df22ab2b" // v2.4.7
 
 	// ArgoCDDefaultBackupKeyLength is the length of the generated default backup key.
 	ArgoCDDefaultBackupKeyLength = 32
@@ -92,7 +95,7 @@ const (
 	ArgoCDDefaultDexConfig = ""
 
 	// ArgoCDDefaultDexImage is the Dex container image to use when not specified.
-	ArgoCDDefaultDexImage = "quay.io/dexidp/dex"
+	ArgoCDDefaultDexImage = "ghcr.io/dexidp/dex"
 
 	// ArgoCDDefaultDexOAuthRedirectPath is the default path to use for the OAuth Redirect URI.
 	ArgoCDDefaultDexOAuthRedirectPath = "/api/dex/callback"
@@ -103,17 +106,20 @@ const (
 	// ArgoCDDefaultDexHTTPPort is the default HTTP listen port for Dex.
 	ArgoCDDefaultDexHTTPPort = 5556
 
+	// ArgoCDDefaultDexMetricsPort is the default Metrics listen port for Dex.
+	ArgoCDDefaultDexMetricsPort = 5558
+
 	// ArgoCDDefaultDexServiceAccountName is the default Service Account name for the Dex server.
 	ArgoCDDefaultDexServiceAccountName = "argocd-dex-server"
 
 	// ArgoCDDefaultDexVersion is the Dex container image tag to use when not specified.
-	ArgoCDDefaultDexVersion = "sha256:77bfea96e8d8f3e4197b9f6020c8f5dedbb701245c19afd69a15747ae4bf2804" // v2.28.0
+	ArgoCDDefaultDexVersion = "sha256:d5f887574312f606c61e7e188cfb11ddb33ff3bf4bd9f06e6b1458efca75f604" // v2.30.3
 
 	// ArgoCDDefaultExportJobImage is the export job container image to use when not specified.
 	ArgoCDDefaultExportJobImage = "quay.io/argoprojlabs/argocd-operator-util"
 
 	// ArgoCDDefaultExportJobVersion is the export job container image tag to use when not specified.
-	ArgoCDDefaultExportJobVersion = "sha256:0c779eea3f08ffa75fe9d06852b9ab7aed445cb5ac96831c2429b0ed98444324" // v0.1.0
+	ArgoCDDefaultExportJobVersion = "sha256:133b064fc01154efd6b1a1698571b0e461d4b515245bbff3350bbb186a7f6935" // 0.4.0
 
 	// ArgoCDDefaultExportLocalCapicity is the default capacity to use for local export.
 	ArgoCDDefaultExportLocalCapicity = "2Gi"
@@ -169,11 +175,19 @@ const (
 	// ArgoCDDefaultKustomizeBuildOptions is the default kustomize build options.
 	ArgoCDDefaultKustomizeBuildOptions = ""
 
-	// ArgoCDKeycloakImageName is the default Keycloak Image used when not specified.
-	ArgoCDKeycloakImageName = "registry.redhat.io/rh-sso-7/sso74-openshift-rhel8"
+	// ArgoCDKeycloakImage is the default Keycloak Image used for the non-openshift platforms when not specified.
+	ArgoCDKeycloakImage = "quay.io/keycloak/keycloak"
 
-	// ArgoCDKeycloakVersion is the default Keycloak version used when not specified.
-	ArgoCDKeycloakVersion = "sha256:39d752173fc97c29373cd44477b48bcb078531def0a897ee81a60e8d1d0212cc"
+	// ArgoCDKeycloakVersion is the default Keycloak version used for the non-openshift platform when not specified.
+	// Version: 15.0.2
+	ArgoCDKeycloakVersion = "sha256:64fb81886fde61dee55091e6033481fa5ccdac62ae30a4fd29b54eb5e97df6a9"
+
+	// ArgoCDKeycloakImageForOpenShift is the default Keycloak Image used for the OpenShift platform when not specified.
+	ArgoCDKeycloakImageForOpenShift = "registry.redhat.io/rh-sso-7/sso75-openshift-rhel8"
+
+	// ArgoCDKeycloakVersionForOpenShift is the default Keycloak version used for the OpenShift platform when not specified.
+	// Version: 7.5.1
+	ArgoCDKeycloakVersionForOpenShift = "sha256:720a7e4c4926c41c1219a90daaea3b971a3d0da5a152a96fed4fb544d80f52e3"
 
 	// ArgoCDDefaultOIDCConfig is the default OIDC configuration.
 	ArgoCDDefaultOIDCConfig = ""
@@ -200,7 +214,7 @@ const (
 	ArgoCDDefaultRedisHAProxyImage = "haproxy"
 
 	// ArgoCDDefaultRedisHAProxyVersion is the default Redis HAProxy image tag to use when not specified.
-	ArgoCDDefaultRedisHAProxyVersion = "sha256:cd4b3d4d27ae5931dc96b9632188590b7a6880469bcf07f478a3280dd0955336" // 2.0.4
+	ArgoCDDefaultRedisHAProxyVersion = "sha256:7392fbbbb53e9e063ca94891da6656e6062f9d021c0e514888a91535b9f73231" // 2.0.25-alpine
 
 	// ArgoCDDefaultRedisImage is the Redis container image to use when not specified.
 	ArgoCDDefaultRedisImage = "redis"
@@ -215,10 +229,10 @@ const (
 	ArgoCDDefaultRedisSuffix = "redis"
 
 	// ArgoCDDefaultRedisVersion is the Redis container image tag to use when not specified.
-	ArgoCDDefaultRedisVersion = "sha256:4be7fdb131e76a6c6231e820c60b8b12938cf1ff3d437da4871b9b2440f4e385" // 5.0.3
+	ArgoCDDefaultRedisVersion = "sha256:8061ca607db2a0c80010aeb5fc9bed0253448bc68711eaa14253a392f6c48280" // 6.2.4-alpine
 
 	// ArgoCDDefaultRedisVersionHA is the Redis container image tag to use when not specified in HA mode.
-	ArgoCDDefaultRedisVersionHA = "sha256:27e139dd0476133961d36e5abdbbb9edf9f596f80cc2f9c2e8f37b20b91d610d" // 5.0.6-alpine
+	ArgoCDDefaultRedisVersionHA = "sha256:8061ca607db2a0c80010aeb5fc9bed0253448bc68711eaa14253a392f6c48280" // 6.2.4-alpine
 
 	// ArgoCDDefaultRepoMetricsPort is the default listen port for the Argo CD repo server metrics.
 	ArgoCDDefaultRepoMetricsPort = 8084

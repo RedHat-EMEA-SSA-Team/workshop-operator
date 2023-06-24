@@ -71,7 +71,7 @@ func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 								},
 							},
 							ReadinessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									Exec: &corev1.ExecAction{
 										Command: []string{
 											"/bin/sh",
@@ -86,7 +86,7 @@ func NewDeployment(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 								TimeoutSeconds:      1,
 							},
 							LivenessProbe: &corev1.Probe{
-								Handler: corev1.Handler{
+								ProbeHandler: corev1.ProbeHandler{
 									TCPSocket: &corev1.TCPSocketAction{
 										Port: intstr.IntOrString{
 											Type:   intstr.Int,

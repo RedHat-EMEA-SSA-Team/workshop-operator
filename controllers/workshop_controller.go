@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-logr/logr"
 	routev1 "github.com/openshift/api/route/v1"
-	"github.com/prometheus/common/log"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"

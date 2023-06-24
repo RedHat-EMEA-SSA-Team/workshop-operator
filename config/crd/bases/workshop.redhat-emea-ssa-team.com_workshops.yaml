@@ -107,6 +107,8 @@ spec:
                         - name
                         - tag
                         type: object
+                      serverImageTag: 
+                        type: string
                     required:
                     - enabled
                     - image

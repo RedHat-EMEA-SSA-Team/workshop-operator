@@ -8,15 +8,18 @@ import (
 	"container/list"
 	"sync"
 	"time"
+
+	"github.com/cespare/xxhash/v2"
 )
 
 type Item struct {
-	listid int
-
-	Key      uint64
+	Key      string
 	Value    interface{}
 	ExpireAt time.Time
 	OnEvict  func()
+
+	listid int
+	keyh   uint64
 }
 
 type T struct {
@@ -26,7 +29,7 @@ type T struct {
 	countSketch *cm4
 	bouncer     *doorkeeper
 
-	data map[uint64]*list.Element
+	data map[string]*list.Element
 
 	lru  *lruCache
 	slru *slruCache
@@ -48,7 +51,7 @@ func New(size int, samples int) *T {
 		slru20 = 1
 	}
 
-	data := make(map[uint64]*list.Element, size)
+	data := make(map[string]*list.Element, size)
 
 	return &T{
 		w:       0,
@@ -70,7 +73,7 @@ func (t *T) onEvict(item *Item) {
 	}
 }
 
-func (t *T) Get(key uint64) (interface{}, bool) {
+func (t *T) Get(key string) (interface{}, bool) {
 	t.w++
 	if t.w == t.samples {
 		t.countSketch.reset()
@@ -78,7 +81,8 @@ func (t *T) Get(key uint64) (interface{}, bool) {
 		t.w = 0
 	}
 
-	t.countSketch.add(key)
+	keyh := xxhash.Sum64String(key)
+	t.countSketch.add(keyh)
 
 	val, ok := t.data[key]
 	if !ok {
@@ -101,6 +105,8 @@ func (t *T) Get(key uint64) (interface{}, bool) {
 }
 
 func (t *T) Set(newItem *Item) {
+	newItem.keyh = xxhash.Sum64String(newItem.Key)
+
 	oldItem, evicted := t.lru.add(newItem)
 	if !evicted {
 		return
@@ -113,13 +119,13 @@ func (t *T) Set(newItem *Item) {
 		return
 	}
 
-	if !t.bouncer.allow(oldItem.Key) {
+	if !t.bouncer.allow(oldItem.keyh) {
 		t.onEvict(oldItem)
 		return
 	}
 
-	victimCount := t.countSketch.estimate(victim.Key)
-	itemCount := t.countSketch.estimate(oldItem.Key)
+	victimCount := t.countSketch.estimate(victim.keyh)
+	itemCount := t.countSketch.estimate(oldItem.keyh)
 
 	if itemCount > victimCount {
 		t.slru.add(oldItem)
@@ -128,7 +134,7 @@ func (t *T) Set(newItem *Item) {
 	}
 }
 
-func (t *T) Del(key uint64) {
+func (t *T) Del(key string) {
 	if val, ok := t.data[key]; ok {
 		t.del(val)
 	}
@@ -160,7 +166,7 @@ func NewSync(size int, samples int) *SyncT {
 	}
 }
 
-func (t *SyncT) Get(key uint64) (interface{}, bool) {
+func (t *SyncT) Get(key string) (interface{}, bool) {
 	t.mu.Lock()
 	val, ok := t.t.Get(key)
 	t.mu.Unlock()
@@ -173,7 +179,7 @@ func (t *SyncT) Set(item *Item) {
 	t.mu.Unlock()
 }
 
-func (t *SyncT) Del(key uint64) {
+func (t *SyncT) Del(key string) {
 	t.mu.Lock()
 	t.t.Del(key)
 	t.mu.Unlock()

@@ -11,7 +11,7 @@ import (
 
 // NewArgoCDCustomResource create a ArgoCD Custom Resource
 func NewArgoCDCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
-	name string, namespace string, labels map[string]string, argocdPolicy string) *argocdoperator.ArgoCD {
+	name string, namespace string, labels map[string]string, argocdPolicy string, extraConfig map[string]string) *argocdoperator.ArgoCD {
 
 	scopes := "[preferred_username]"
 	defaultPolicy := ""
@@ -38,6 +38,7 @@ func NewArgoCDCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Sche
 				Scopes:        &scopes,
 				DefaultPolicy: &defaultPolicy,
 			},
+			ExtraConfig: extraConfig,
 		},
 	}
 

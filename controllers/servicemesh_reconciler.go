@@ -10,7 +10,7 @@ import (
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra"
 	maistrav1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
-	"github.com/prometheus/common/log"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -196,7 +196,7 @@ func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Works
 			return reconcile.Result{}, err
 		} else if err == nil {
 			log.Infof("Created %s OperatorGroup", redhatOperatorGroup.Name)
-		}	
+		}
 	}
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, subcriptionName, redhatOperatorsNamespace.Name,
@@ -226,17 +226,17 @@ func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (r
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Namespace", redhatOperatorsNamespace.Name)
-		
+
 		redhatOperatorGroup := kubernetes.NewOperatorGroup(workshop, r.Scheme, "distributed-tracing-group", redhatOperatorsNamespace.Name, "")
 		if err := r.Create(context.TODO(), redhatOperatorGroup); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
 			log.Infof("Created %s OperatorGroup", redhatOperatorGroup.Name)
-		}	
+		}
 	}
 
 	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "jaeger-product", redhatOperatorsNamespace.Name,
-"jaeger-product", channel, clusterserviceversion)
+		"jaeger-product", channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -244,7 +244,7 @@ func (r *WorkshopReconciler) addJaegerOperator(workshop *workshopv1.Workshop) (r
 	}
 
 	if err := r.ApproveInstallPlan(clusterserviceversion, "jaeger-product", redhatOperatorsNamespace.Name); err != nil {
-	log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
+		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	sdkVersion "github.com/operator-framework/operator-sdk/version"
+//	sdkVersion "github.com/operator-framework/operator-sdk/version"
 )
 
 var (
@@ -44,7 +44,8 @@ func init() {
 		GitTag:                  buildTag,
 		GoVersion:               runtime.Version(),
 		GoArch:                  fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH),
-		OperatorSDK:             sdkVersion.Version,
+//		OperatorSDK:             sdkVersion.Version,
+		OperatorSDK:             "1.14",
 		MinimumSupportedVersion: minimumSupportedVersion,
 	}
 }

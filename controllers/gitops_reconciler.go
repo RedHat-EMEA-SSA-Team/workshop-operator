@@ -12,7 +12,8 @@ import (
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	argocdoperator "github.com/argoproj-labs/argocd-operator/api/v1alpha1"
-	"github.com/prometheus/common/log"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
+
 	"golang.org/x/crypto/bcrypt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -83,7 +84,8 @@ func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 	argocdPolicy := ""
 	namespaceList := ""
 	secretData := map[string]string{}
-	configMapData := map[string]string{}
+//	configMapData := map[string]string{}
+	extraConfigData := map[string]string{}
 
 	for id := 1; id <= users; id++ {
 		username := fmt.Sprintf("user%d", id)
@@ -104,11 +106,14 @@ g, ` + username + `, ` + userRole + `
 		argocdPolicy = fmt.Sprintf("%s%s", argocdPolicy, userPolicy)
 
 		secretData[fmt.Sprintf("accounts.%s.password", username)] = bcryptPassword
+//		configMapData[fmt.Sprintf("accounts.%s", username)] = "login"
 
-		configMapData[fmt.Sprintf("accounts.%s", username)] = "login"
+//		extraConfigData[fmt.Sprintf("accounts.%s.password", username)] = bcryptPassword
+		extraConfigData[fmt.Sprintf("accounts.%s", username)] = "login"
 
 		labels["app.kubernetes.io/name"] = "appproject-cr"
-		appProjectCustomResource := commonargocdoperator.NewAppProjectCustomResource(workshop, r.Scheme, projectName, namespace.Name, labels, argocdPolicy)
+		appProjectCustomResource := commonargocdoperator.NewAppProjectCustomResource(workshop, r.Scheme, projectName,
+			namespace.Name, labels, argocdPolicy)
 		if err := r.Create(context.TODO(), appProjectCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
@@ -129,50 +134,52 @@ g, ` + username + `, ` + userRole + `
 		}
 	}
 
-	labels["app.kubernetes.io/name"] = "argocd-secret"
-	secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, "argocd-secret", namespace.Name, labels, secretData)
-	if err := r.Create(context.TODO(), secret); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s Secret", secret.Name)
-		// } else if errors.IsAlreadyExists(err) {
-		// 	secretFound := &corev1.Secret{}
-		// 	if err := r.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: namespace.Name}, secretFound); err != nil {
-		// 		return reconcile.Result{}, err
-		// 	} else if err == nil {
-		// 		if !util.IsIntersectMap(secretData, secretFound.StringData) {
-		// 			secretFound.StringData = secretData
-		// 			if err := r.Update(context.TODO(), secretFound); err != nil {
-		// 				return reconcile.Result{}, err
-		// 			}
-		// 			log.Infof("Updated %s Secret", secretFound.Name)
-		// 		}
-		// 	}
-	}
-
-	labels["app.kubernetes.io/name"] = "argocd-cm"
-	configmap := kubernetes.NewConfigMap(workshop, r.Scheme, "argocd-cm", namespace.Name, labels, configMapData)
-	if err := r.Create(context.TODO(), configmap); err != nil && !errors.IsAlreadyExists(err) {
-		return reconcile.Result{}, err
-	} else if err == nil {
-		log.Infof("Created %s ConfigMap", configmap.Name)
-	} else if errors.IsAlreadyExists(err) {
-		configmapFound := &corev1.ConfigMap{}
-		if err := r.Get(context.TODO(), types.NamespacedName{Name: configmap.Name, Namespace: namespace.Name}, configmapFound); err != nil {
+		labels["app.kubernetes.io/name"] = "argocd-secret"
+		secret := kubernetes.NewStringDataSecret(workshop, r.Scheme, "argocd-secret", namespace.Name, labels, secretData)
+		if err := r.Create(context.TODO(), secret); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			if !util.IsIntersectMap(configMapData, configmapFound.Data) {
-				configmapFound.Data = configMapData
-				if err := r.Update(context.TODO(), configmapFound); err != nil {
-					return reconcile.Result{}, err
+			log.Infof("Created %s Secret", secret.Name)
+			// } else if errors.IsAlreadyExists(err) {
+			// 	secretFound := &corev1.Secret{}
+			// 	if err := r.Get(context.TODO(), types.NamespacedName{Name: secret.Name, Namespace: namespace.Name}, secretFound); err != nil {
+			// 		return reconcile.Result{}, err
+			// 	} else if err == nil {
+			// 		if !util.IsIntersectMap(secretData, secretFound.StringData) {
+			// 			secretFound.StringData = secretData
+			// 			if err := r.Update(context.TODO(), secretFound); err != nil {
+			// 				return reconcile.Result{}, err
+			// 			}
+			// 			log.Infof("Updated %s Secret", secretFound.Name)
+			// 		}
+			// 	}
+		}
+
+/*
+		labels["app.kubernetes.io/name"] = "argocd-cm-extra"
+		configmap := kubernetes.NewConfigMap(workshop, r.Scheme, "argocd-cm-extra", namespace.Name, labels, configMapData)
+		if err := r.Create(context.TODO(), configmap); err != nil && !errors.IsAlreadyExists(err) {
+			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Created %s ConfigMap", configmap.Name)
+		} else if errors.IsAlreadyExists(err) {
+			configmapFound := &corev1.ConfigMap{}
+			if err := r.Get(context.TODO(), types.NamespacedName{Name: configmap.Name, Namespace: namespace.Name}, configmapFound); err != nil {
+				return reconcile.Result{}, err
+			} else if err == nil {
+				if !util.IsIntersectMap(configMapData, configmapFound.Data) {
+					configmapFound.Data = configMapData
+					if err := r.Update(context.TODO(), configmapFound); err != nil {
+						return reconcile.Result{}, err
+					}
+					log.Infof("Updated %s ConfigMap", configmapFound.Name)
 				}
-				log.Infof("Updated %s ConfigMap", configmapFound.Name)
 			}
 		}
-	}
-
+*/
 	labels["app.kubernetes.io/name"] = "argocd-cr"
-	argoCDCustomResource := commonargocdoperator.NewArgoCDCustomResource(workshop, r.Scheme, "argocd", namespace.Name, labels, argocdPolicy)
+	argoCDCustomResource := commonargocdoperator.NewArgoCDCustomResource(workshop, r.Scheme, "argocd", namespace.Name, labels,
+		argocdPolicy, extraConfigData)
 	if err := r.Create(context.TODO(), argoCDCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -182,8 +189,24 @@ g, ` + username + `, ` + userRole + `
 		if err := r.Get(context.TODO(), types.NamespacedName{Name: argoCDCustomResource.Name, Namespace: namespace.Name}, customResourceFound); err != nil {
 			return reconcile.Result{}, err
 		} else if err == nil {
+			policyChanged := false
+			configChanged := false
 			if !reflect.DeepEqual(&argocdPolicy, customResourceFound.Spec.RBAC.Policy) {
 				customResourceFound.Spec.RBAC.Policy = &argocdPolicy
+				policyChanged = true
+				log.Infof("GitOps Custom Resource policy change", )
+			}
+
+			// can't use deep equal here to compare maps since the passwords crypt will be different
+			// each time so we compare the existance of keys manually
+
+			if !KeysExist(extraConfigData, customResourceFound.Spec.ExtraConfig) {
+				customResourceFound.Spec.ExtraConfig = extraConfigData
+				configChanged = true
+				log.Infof("GitOps Custom Resource extra config change", )
+			}
+
+			if (policyChanged || configChanged) {
 				if err := r.Update(context.TODO(), customResourceFound); err != nil {
 					return reconcile.Result{}, err
 				}
@@ -202,14 +225,27 @@ g, ` + username + `, ` + userRole + `
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	labels["app.kubernetes.io/name"] = "argocd-default-cluster-config"
+	// This is now managed by operator
+	//labels["app.kubernetes.io/name"] = "argocd-default-cluster-config"
 
-	if result, err := r.manageArgocdDefaultClusterConfigSecret(workshop, namespace.Name, labels, namespaceList); util.IsRequeued(result, err) {
-		return result, err
-	}
+	//if result, err := r.manageArgocdDefaultClusterConfigSecret(workshop, namespace.Name, labels, namespaceList); util.IsRequeued(result, err) {
+	//	return result, err
+	//}
 
 	//Success
 	return reconcile.Result{}, nil
+}
+
+func KeysExist(v1 map[string]string, v2 map[string]string) bool {
+
+	// make sure all the keys in v1 exist in v2
+	for key, _ := range v1 {
+		if v2[key] == "" {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (r *WorkshopReconciler) manageArgocdDefaultClusterConfigSecret(workshop *workshopv1.Workshop, namespaceName string,

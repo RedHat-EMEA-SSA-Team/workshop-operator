@@ -8,7 +8,7 @@ import (
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	securityv1 "github.com/openshift/api/security/v1"
-	"github.com/prometheus/common/log"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"

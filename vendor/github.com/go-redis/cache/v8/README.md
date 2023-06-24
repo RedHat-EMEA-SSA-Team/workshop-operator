@@ -3,15 +3,25 @@
 [![Build Status](https://travis-ci.org/go-redis/cache.svg)](https://travis-ci.org/go-redis/cache)
 [![GoDoc](https://godoc.org/github.com/go-redis/cache?status.svg)](https://pkg.go.dev/github.com/go-redis/cache/v8?tab=doc)
 
-> :heart: [**Uptrace.dev** - distributed traces, logs, and errors in one place](https://uptrace.dev)
+go-redis/cache library implements a cache using Redis as a
+key/value storage. It uses [MessagePack](https://github.com/vmihailenco/msgpack) to marshal values.
+
+Optinally you can use [TinyLFU](https://github.com/dgryski/go-tinylfu) or any other [cache algorithm](https://github.com/vmihailenco/go-cache-benchmark) as a local in-process cache.
 
 ## Installation
 
-go-redis/cache requires a Go version with [Modules](https://github.com/golang/go/wiki/Modules) support and uses import versioning. So please make sure to initialize a Go module before installation:
+go-redis/cache supports 2 last Go versions and requires a Go version with
+[modules](https://github.com/golang/go/wiki/Modules) support. So make sure to initialize a Go
+module:
 
 ```shell
 go mod init github.com/my/repo
-go get -u github.com/go-redis/cache/v8
+```
+
+And then install go-redis/cache/v8 (note _v8_ in the import; omitting it is a popular mistake):
+
+```shell
+go get github.com/go-redis/cache/v8
 ```
 
 ## Quickstart

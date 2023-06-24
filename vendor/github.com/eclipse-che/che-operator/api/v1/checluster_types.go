@@ -368,12 +368,11 @@ type CheClusterSpecServer struct {
 	// The plugin ID must have `publisher/plugin/version`.
 	// The URI must start from `http`.
 	// +optional
-	// +kubebuilder:default:=eclipse/che-theia/latest
+	// +kubebuilder:default:=che-incubator/che-code/latest
 	WorkspaceDefaultEditor string `json:"workspaceDefaultEditor,omitempty"`
 	// Default components applied to DevWorkspaces.
 	// These default components are meant to be used when a Devfile does not contain any components.
 	// +optional
-	// +kubebuilder:default:={{name: universal-developer-image, container: {image: "quay.io/devfile/universal-developer-image:ubi8-38da5c2"}}}
 	WorkspaceDefaultComponents []devfile.Component `json:"workspaceDefaultComponents,omitempty"`
 	// List of environment variables to set in the Che server container.
 	// +optional
@@ -389,7 +388,7 @@ type CheClusterSpecServer struct {
 	DashboardEnv []corev1.EnvVar `json:"dashboardEnv,omitempty"`
 	// Open VSX registry URL. If omitted an embedded instance will be used.
 	// +optional
-	OpenVSXRegistryURL string `json:"openVSXRegistryURL,omitempty"`
+	OpenVSXRegistryURL *string `json:"openVSXRegistryURL,omitempty"`
 }
 
 // +k8s:openapi-gen=true
@@ -809,47 +808,44 @@ type CheClusterGitServices struct {
 
 // GitHubService enables users to work with repositories hosted on GitHub (GitHub.com or GitHub Enterprise).
 type GitHubService struct {
-	// Kubernetes secret, that contains Base64-encoded GitHub OAuth Client id and GitHub OAuth Client secret,
-	// that stored in `id` and `secret` keys respectively.
-	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-github/.
+	// Kubernetes secret, that contains Base64-encoded GitHub OAuth Client id and GitHub OAuth Client secret.
+	// See the following page for details: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-github/.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	SecretName string `json:"secretName"`
 	// GitHub server endpoint URL.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default:="https://github.com"
-	Endpoint string `json:"endpoint"`
+	// Deprecated in favor of `che.eclipse.org/scm-server-endpoint` annotation.
+	// See the following page for details: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-github/.
+	// +optional
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // GitLabService enables users to work with repositories hosted on GitLab (gitlab.com or self-hosted).
 type GitLabService struct {
-	// Kubernetes secret, that contains Base64-encoded GitHub Application id and GitLab Application Client secret,
-	// that stored in `id` and `secret` keys respectively.
+	// Kubernetes secret, that contains Base64-encoded GitHub Application id and GitLab Application Client secret.
 	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-gitlab/.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	SecretName string `json:"secretName"`
 	// GitLab server endpoint URL.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default:="https://gitlab.com"
-	Endpoint string `json:"endpoint"`
+	// Deprecated in favor of `che.eclipse.org/scm-server-endpoint` annotation.
+	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-gitlab/.
+	// +optional
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // BitBucketService enables users to work with repositories hosted on Bitbucket (bitbucket.org or self-hosted).
 type BitBucketService struct {
 	// Kubernetes secret, that contains Base64-encoded Bitbucket OAuth 1.0 or OAuth 2.0 data.
-	// For OAuth 1.0: private key, Bitbucket Application link consumer key and Bitbucket Application link shared secret must be stored
-	// in `private.key`, `consumer.key` and `shared_secret` keys respectively.
-	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-1-for-a-bitbucket-server/.
-	// For OAuth 2.0: Bitbucket OAuth consumer key and Bitbucket OAuth consumer secret must be stored
-	// in `id` and `secret` keys respectively.
-	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-the-bitbucket-cloud/.
+	// See the following pages for details: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-1-for-a-bitbucket-server/
+	// and https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-the-bitbucket-cloud/.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	SecretName string `json:"secretName"`
 	// Bitbucket server endpoint URL.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default:="https://bitbucket.org"
+	// Deprecated in favor of `che.eclipse.org/scm-server-endpoint` annotation.
+	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-1-for-a-bitbucket-server/.
+	// +optional
 	Endpoint string `json:"endpoint,omitempty"`
 }
 

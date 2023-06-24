@@ -21,7 +21,7 @@ func NewServiceMeshControlPlaneCR(workshop *workshopv1.Workshop, scheme *runtime
 			Namespace: namespace,
 		},
 		Spec: maistrav2.ControlPlaneSpec{
-			Version: "v2.0",
+			Version: "v2.4",
 			Tracing: &maistrav2.TracingConfig{
 				Type:     maistrav2.TracerTypeJaeger,
 				Sampling: &sampling,

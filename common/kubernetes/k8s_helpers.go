@@ -5,7 +5,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/prometheus/common/log"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -16,7 +16,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
-const timedWait int64 = 200; // seconds
+const timedWait int64 = 200 // seconds
 
 var (
 	k8sclient = GetK8Client()
@@ -45,7 +45,7 @@ func GetK8Client() *k8s {
 // GetDeploymentStatus listens to deployment events and checks replicas once MODIFIED event is received
 func (cl *k8s) GetDeploymentStatus(name string, namespace string) (scaled bool) {
 	api := cl.clientset.AppsV1()
-	var timeout int64 = timedWait;
+	var timeout int64 = timedWait
 	listOptions := metav1.ListOptions{
 		FieldSelector:  fields.OneTermEqualSelector("metadata.name", name).String(),
 		TimeoutSeconds: &timeout,

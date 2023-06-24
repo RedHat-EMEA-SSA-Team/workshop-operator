@@ -59,6 +59,9 @@ const (
 	// ArgoCDRedisHAConfigMapName is the upstream ArgoCD Redis HA ConfigMap name.
 	ArgoCDRedisHAConfigMapName = "argocd-redis-ha-configmap"
 
+	// ArgoCDRedisHAHealthConfigMapName is the upstream ArgoCD Redis HA Health ConfigMap name.
+	ArgoCDRedisHAHealthConfigMapName = "argocd-redis-ha-health-configmap"
+
 	// ArgoCDRedisProbesConfigMapName is the upstream ArgoCD Redis Probes ConfigMap name.
 	ArgoCDRedisProbesConfigMapName = "argocd-redis-ha-probes"
 
@@ -73,6 +76,9 @@ const (
 
 	// ArgoCDTLSCertsConfigMapName is the upstream hard-coded TLS certificate data ConfigMap name.
 	ArgoCDTLSCertsConfigMapName = "argocd-tls-certs-cm"
+
+	// ArgoCDRedisServerTLSSecretName is the name of the TLS secret for the redis-server
+	ArgoCDRedisServerTLSSecretName = "argocd-operator-redis-tls"
 
 	// ArgoCDRepoServerTLSSecretName is the name of the TLS secret for the repo-server
 	ArgoCDRepoServerTLSSecretName = "argocd-repo-server-tls"

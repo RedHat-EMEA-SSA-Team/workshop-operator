@@ -12,25 +12,23 @@
 
 package constants
 
-const (
-	// PostgresSQL
-	DefaultPostgresUser              = "pgche"
-	DefaultPostgresHostName          = "postgres"
-	DefaultPostgresPort              = "5432"
-	DefaultPostgresDb                = "dbche"
-	DefaultPostgresMemoryLimit       = "1024Mi"
-	DefaultPostgresMemoryRequest     = "512Mi"
-	DefaultPostgresCpuLimit          = "500m"
-	DefaultPostgresCpuRequest        = "100m"
-	DefaultPostgresCredentialsSecret = "postgres-credentials"
-	DefaultPostgresVolumeClaimName   = "postgres-data"
-	DefaultPostgresPvcClaimSize      = "1Gi"
+import (
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/pointer"
+)
 
+const (
 	// Dashboard
 	DefaultDashboardMemoryLimit   = "256Mi"
 	DefaultDashboardMemoryRequest = "32Mi"
 	DefaultDashboardCpuLimit      = "500m"
 	DefaultDashboardCpuRequest    = "100m"
+
+	// Gateway
+	DefaultGatewayMemoryLimit   = "256Mi"
+	DefaultGatewayMemoryRequest = "64Mi"
+	DefaultGatewayCpuLimit      = "500m"
+	DefaultGatewayCpuRequest    = "50m"
 
 	// PluginRegistry
 	DefaultPluginRegistryMemoryLimit                          = "256Mi"
@@ -57,26 +55,33 @@ const (
 	DefaultServerTrustStoreConfigMapName   = "ca-certs"
 	DefaultProxyCredentialsSecret          = "proxy-credentials"
 	DefaultGitSelfSignedCertsConfigMapName = "che-git-self-signed-cert"
-	DefaultJavaOpts                        = "-XX:MaxRAMPercentage=85.0"
-	DefaultSecurityContextFsGroup          = 1724
-	DefaultSecurityContextRunAsUser        = 1724
-	DefaultCheServiceAccountName           = "che"
+	// -Dcom.redhat.fips=false workaround allows to run che-server on OpenShift with FIPS enabled
+	// See https://issues.redhat.com/browse/CRW-3301
+	DefaultJavaOpts                 = "-XX:MaxRAMPercentage=85.0 -Dcom.redhat.fips=false"
+	DefaultSecurityContextFsGroup   = 1724
+	DefaultSecurityContextRunAsUser = 1724
+	DefaultCheServiceAccountName    = "che"
 
 	// OAuth
-	BitBucketOAuthConfigClientIdFileName     = "id"
-	BitBucketOAuthConfigClientSecretFileName = "secret"
-	BitBucketOAuthConfigMountPath            = "/che-conf/oauth/bitbucket"
-	BitBucketOAuthConfigPrivateKeyFileName   = "private.key"
-	BitBucketOAuthConfigConsumerKeyFileName  = "consumer.key"
-	GitHubOAuthConfigMountPath               = "/che-conf/oauth/github"
-	GitHubOAuthConfigClientIdFileName        = "id"
-	GitHubOAuthConfigClientSecretFileName    = "secret"
-	GitLabOAuthConfigMountPath               = "/che-conf/oauth/gitlab"
-	GitLabOAuthConfigClientIdFileName        = "id"
-	GitLabOAuthConfigClientSecretFileName    = "secret"
-	OAuthScmConfiguration                    = "oauth-scm-configuration"
-	AccessToken                              = "access_token"
-	IdToken                                  = "id_token"
+	BitBucketOAuthConfigClientIdFileName       = "id"
+	BitBucketOAuthConfigClientSecretFileName   = "secret"
+	BitBucketOAuthConfigMountPath              = "/che-conf/oauth/bitbucket"
+	BitBucketOAuthConfigPrivateKeyFileName     = "private.key"
+	BitBucketOAuthConfigConsumerKeyFileName    = "consumer.key"
+	GitHubOAuthConfigMountPath                 = "/che-conf/oauth/github"
+	GitHubOAuthConfigClientIdFileName          = "id"
+	GitHubOAuthConfigClientSecretFileName      = "secret"
+	AzureDevOpsOAuth                           = "azure-devops"
+	AzureDevOpsOAuthConfigMountPath            = "/che-conf/oauth/azure-devops"
+	AzureDevOpsOAuthConfigClientIdFileName     = "id"
+	AzureDevOpsOAuthConfigClientSecretFileName = "secret"
+	GitLabOAuthConfigMountPath                 = "/che-conf/oauth/gitlab"
+	GitLabOAuthConfigClientIdFileName          = "id"
+	GitLabOAuthConfigClientSecretFileName      = "secret"
+	OAuthScmConfiguration                      = "oauth-scm-configuration"
+	AccessToken                                = "access_token"
+	IdToken                                    = "id_token"
+	OpenShiftOAuthScope                        = "user:full"
 
 	// Labels
 	KubernetesComponentLabelKey = "app.kubernetes.io/component"
@@ -86,19 +91,22 @@ const (
 	KubernetesNameLabelKey      = "app.kubernetes.io/name"
 
 	// Annotations
-	CheEclipseOrgMountPath                = "che.eclipse.org/mount-path"
-	CheEclipseOrgMountAs                  = "che.eclipse.org/mount-as"
-	CheEclipseOrgEnvName                  = "che.eclipse.org/env-name"
-	CheEclipseOrgNamespace                = "che.eclipse.org/namespace"
-	CheEclipseOrgOAuthScmServer           = "che.eclipse.org/oauth-scm-server"
-	CheEclipseOrgScmServerEndpoint        = "che.eclipse.org/scm-server-endpoint"
-	CheEclipseOrgManagedAnnotationsDigest = "che.eclipse.org/managed-annotations-digest"
+	CheEclipseOrgMountPath                          = "che.eclipse.org/mount-path"
+	CheEclipseOrgMountAs                            = "che.eclipse.org/mount-as"
+	CheEclipseOrgEnvName                            = "che.eclipse.org/env-name"
+	CheEclipseOrgNamespace                          = "che.eclipse.org/namespace"
+	CheEclipseOrgOAuthScmServer                     = "che.eclipse.org/oauth-scm-server"
+	CheEclipseOrgScmServerEndpoint                  = "che.eclipse.org/scm-server-endpoint"
+	CheEclipseOrgManagedAnnotationsDigest           = "che.eclipse.org/managed-annotations-digest"
+	CheEclipseOrgScmGitHubDisableSubdomainIsolation = "che.eclipse.org/scm-github-disable-subdomain-isolation"
 
 	// DevEnvironments
 	PerUserPVCStorageStrategy      = "per-user"
 	DefaultPvcStorageStrategy      = "per-user"
 	PerWorkspacePVCStorageStrategy = "per-workspace"
+	EphemeralPVCStorageStrategy    = "ephemeral"
 	CommonPVCStorageStrategy       = "common"
+	DefaultDeploymentStrategy      = "Recreate"
 	DefaultAutoProvision           = true
 	DefaultWorkspaceJavaOpts       = "-XX:MaxRAM=150m -XX:MaxRAMFraction=2 -XX:+UseParallelGC " +
 		"-XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=20 -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 " +
@@ -110,21 +118,20 @@ const (
 	DefaultCheTLSSecretName                = "che-tls"
 	DefaultIngressClass                    = "nginx"
 
-	// ImagePuller
-	KubernetesImagePullerOperatorCSV = "kubernetes-imagepuller-operator.v0.0.9"
-
 	// components name
 	DevfileRegistryName                = "devfile-registry"
 	PluginRegistryName                 = "plugin-registry"
-	PostgresName                       = "postgres"
 	GatewayContainerName               = "gateway"
 	GatewayConfigSideCarContainerName  = "configbump"
 	GatewayAuthenticationContainerName = "oauth-proxy"
 	GatewayAuthorizationContainerName  = "kube-rbac-proxy"
+	KubernetesImagePullerComponentName = "kubernetes-image-puller"
 
 	// common
+	CheFlavor             = "che"
 	CheEclipseOrg         = "che.eclipse.org"
 	InstallOrUpdateFailed = "InstallOrUpdateFailed"
+	FinalizerSuffix       = "finalizers.che.eclipse.org"
 
 	// DevWorkspace
 	DevWorkspaceServiceAccountName = "devworkspace-controller-serviceaccount"
@@ -135,5 +142,15 @@ var (
 	DefaultSingleHostGatewayConfigMapLabels = map[string]string{
 		"app":       "che",
 		"component": "che-gateway-config",
+	}
+
+	DefaultWorkspaceContainerSecurityContext = corev1.SecurityContext{
+		Capabilities: &corev1.Capabilities{
+			Add: []corev1.Capability{
+				"SETGID",
+				"SETUID",
+			},
+		},
+		AllowPrivilegeEscalation: pointer.BoolPtr(true),
 	}
 )

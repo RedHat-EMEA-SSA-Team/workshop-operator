@@ -6,12 +6,12 @@ import (
 
 // Cache is an LRU cache.  It is not safe for concurrent access.
 type slruCache struct {
-	data           map[uint64]*list.Element
+	data           map[string]*list.Element
 	onecap, twocap int
 	one, two       *list.List
 }
 
-func newSLRU(onecap, twocap int, data map[uint64]*list.Element) *slruCache {
+func newSLRU(onecap, twocap int, data map[string]*list.Element) *slruCache {
 	return &slruCache{
 		data:   data,
 		onecap: onecap,

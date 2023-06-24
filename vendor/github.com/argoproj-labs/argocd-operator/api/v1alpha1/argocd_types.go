@@ -42,7 +42,7 @@ func init() {
 //+operator-sdk:csv:customresourcedefinitions:resources={{ArgoCD,v1alpha1,""}}
 //+operator-sdk:csv:customresourcedefinitions:resources={{ArgoCDExport,v1alpha1,""}}
 //+operator-sdk:csv:customresourcedefinitions:resources={{ConfigMap,v1,""}}
-//+operator-sdk:csv:customresourcedefinitions:resources={{CronJob,v1beta1,""}}
+//+operator-sdk:csv:customresourcedefinitions:resources={{CronJob,v1,""}}
 //+operator-sdk:csv:customresourcedefinitions:resources={{Deployment,v1,""}}
 //+operator-sdk:csv:customresourcedefinitions:resources={{Ingress,v1,""}}
 //+operator-sdk:csv:customresourcedefinitions:resources={{Job,v1,""}}
@@ -261,6 +261,21 @@ type ArgoCDIngressSpec struct {
 	TLS []networkingv1.IngressTLS `json:"tls,omitempty"`
 }
 
+// ArgoCDKeycloakSpec defines the desired state for the Keycloak component.
+type ArgoCDKeycloakSpec struct {
+	// Image is the Keycloak container image.
+	Image string `json:"image,omitempty"`
+
+	// Resources defines the Compute Resources required by the container for Keycloak.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// Version is the Keycloak container image tag.
+	Version string `json:"version,omitempty"`
+
+	// VerifyTLS set to false disables strict TLS validation.
+	VerifyTLS *bool `json:"verifyTLS,omitempty"`
+}
+
 //+kubebuilder:object:root=true
 
 // ArgoCDList contains a list of ArgoCD
@@ -268,6 +283,28 @@ type ArgoCDList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []ArgoCD `json:"items"`
+}
+
+// ArgoCDNotifications defines whether the Argo CD Notifications controller should be installed.
+type ArgoCDNotifications struct {
+
+	// Replicas defines the number of replicas to run for notifications-controller
+	Replicas *int32 `json:"replicas,omitempty"`
+
+	// Enabled defines whether argocd-notifications controller should be deployed or not
+	Enabled bool `json:"enabled"`
+
+	// Image is the Argo CD Notifications image (optional)
+	Image string `json:"image,omitempty"`
+
+	// Version is the Argo CD Notifications image tag. (optional)
+	Version string `json:"version,omitempty"`
+
+	// Resources defines the Compute Resources required by the container for Argo CD Notifications.
+	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+
+	// LogLevel describes the log level that should be used by the argocd-notifications. Defaults to ArgoCDDefaultLogLevel if not set.  Valid options are debug,info, error, and warn.
+	LogLevel string `json:"logLevel,omitempty"`
 }
 
 // ArgoCDPrometheusSpec defines the desired state for the Prometheus component.
@@ -327,6 +364,14 @@ type ArgoCDRedisSpec struct {
 	// Version is the Redis container image tag.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Version",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldGroup:Redis","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
+
+	// DisableTLSVerification defines whether redis server API should be accessed using strict TLS validation
+	DisableTLSVerification bool `json:"disableTLSVerification,omitempty"`
+
+	// AutoTLS specifies the method to use for automatic TLS configuration for the redis server
+	// The value specified here can currently be:
+	// - openshift - Use the OpenShift service CA to request TLS config
+	AutoTLS string `json:"autotls,omitempty"`
 }
 
 // ArgoCDRepoSpec defines the desired state for the Argo CD repo server component.
@@ -340,6 +385,9 @@ type ArgoCDRepoSpec struct {
 
 	// MountSAToken describes whether you would like to have the Repo server mount the service account token
 	MountSAToken bool `json:"mountsatoken,omitempty"`
+
+	// Replicas defines the number of replicas for argocd-repo-server. Value should be greater than or equal to 0. Default is nil.
+	Replicas *int32 `json:"replicas,omitempty"`
 
 	// Resources defines the Compute Resources required by the container for Redis.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements'",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldGroup:Repo","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
@@ -367,6 +415,18 @@ type ArgoCDRepoSpec struct {
 
 	// Env lets you specify environment for repo server pods
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Volumes adds volumes to the repo server deployment
+	Volumes []corev1.Volume `json:"volumes,omitempty"`
+
+	// VolumeMounts adds volumeMounts to the repo server container
+	VolumeMounts []corev1.VolumeMount `json:"volumeMounts,omitempty"`
+
+	// InitContainers defines the list of initialization containers for the repo server deployment
+	InitContainers []corev1.Container `json:"initContainers,omitempty"`
+
+	// SidecarContainers defines the list of sidecar containers for the repo server deployment
+	SidecarContainers []corev1.Container `json:"sidecarContainers,omitempty"`
 }
 
 // ArgoCDRouteSpec defines the desired state for an OpenShift Route.
@@ -437,6 +497,9 @@ type ArgoCDServerSpec struct {
 	// LogFormat refers to the log level to be used by the ArgoCD Server component. Defaults to ArgoCDDefaultLogFormat if not configured. Valid options are text or json.
 	LogFormat string `json:"logFormat,omitempty"`
 
+	// Replicas defines the number of replicas for argocd-server. Default is nil. Value should be greater than or equal to 0. Value will be ignored if Autoscaler is enabled.
+	Replicas *int32 `json:"replicas,omitempty"`
+
 	// Resources defines the Compute Resources required by the container for the Argo CD server component.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Requirements'",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldGroup:Server","urn:alm:descriptor:com.tectonic.ui:resourceRequirements"}
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
@@ -449,6 +512,11 @@ type ArgoCDServerSpec struct {
 
 	// Env lets you specify environment for API server pods
 	Env []corev1.EnvVar `json:"env,omitempty"`
+
+	// Extra Command arguments that would append to the Argo CD server command.
+	// ExtraCommandArgs will not be added, if one of these commands is already part of the server command
+	// with same or different value.
+	ExtraCommandArgs []string `json:"extraCommandArgs,omitempty"`
 }
 
 // ArgoCDServerServiceSpec defines the Service options for Argo CD Server component.
@@ -465,6 +533,9 @@ const (
 	// SSOProviderTypeKeycloak means keycloak will be Installed and Integrated with Argo CD. A new realm with name argocd
 	// will be created in this keycloak. This realm will have a client with name argocd that uses OpenShift v4 as Identity Provider.
 	SSOProviderTypeKeycloak SSOProviderType = "keycloak"
+
+	// SSOProviderTypeDex means dex will be Installed and Integrated with Argo CD.
+	SSOProviderTypeDex SSOProviderType = "dex"
 )
 
 // ArgoCDSSOSpec defines SSO provider.
@@ -479,6 +550,12 @@ type ArgoCDSSOSpec struct {
 	VerifyTLS *bool `json:"verifyTLS,omitempty"`
 	// Version is the SSO container image tag.
 	Version string `json:"version,omitempty"`
+
+	// Dex contains the configuration for Argo CD dex authentication
+	Dex *ArgoCDDexSpec `json:"dex,omitempty"`
+
+	// Keycloak contains the configuration for Argo CD keycloak authentication
+	Keycloak *ArgoCDKeycloakSpec `json:"keycloak,omitempty"`
 }
 
 // KustomizeVersionSpec is used to specify information about a kustomize version to be used within ArgoCD.
@@ -516,10 +593,18 @@ type ArgoCDSpec struct {
 	Controller ArgoCDApplicationControllerSpec `json:"controller,omitempty"`
 
 	// Dex defines the Dex server options for ArgoCD.
-	Dex ArgoCDDexSpec `json:"dex,omitempty"`
+	Dex *ArgoCDDexSpec `json:"dex,omitempty"`
 
 	// DisableAdmin will disable the admin user.
 	DisableAdmin bool `json:"disableAdmin,omitempty"`
+
+	// ExtraConfig can be used to add fields to Argo CD configmap that are not supported by Argo CD CRD.
+	//
+	// Note: ExtraConfig takes precedence over Argo CD CRD.
+	// For example, A user sets `argocd.Spec.DisableAdmin` = true and also
+	// `a.Spec.ExtraConfig["admin.enabled"]` = true. In this case, operator updates
+	// Argo CD Configmap as follows -> argocd-cm.Data["admin.enabled"] = true.
+	ExtraConfig map[string]string `json:"extraConfig,omitempty"`
 
 	// GATrackingID is the google analytics tracking ID to use.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Google Analytics Tracking ID'",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
@@ -571,6 +656,9 @@ type ArgoCDSpec struct {
 	// NodePlacement defines NodeSelectors and Taints for Argo CD workloads
 	NodePlacement *ArgoCDNodePlacementSpec `json:"nodePlacement,omitempty"`
 
+	// Notifications defines whether the Argo CD Notifications controller should be installed.
+	Notifications ArgoCDNotifications `json:"notifications,omitempty"`
+
 	// Prometheus defines the Prometheus server options for ArgoCD.
 	Prometheus ArgoCDPrometheusSpec `json:"prometheus,omitempty"`
 
@@ -598,6 +686,10 @@ type ArgoCDSpec struct {
 	// reconciliation process.
 	ResourceInclusions string `json:"resourceInclusions,omitempty"`
 
+	// ResourceTrackingMethod defines how Argo CD should track resources that it manages
+	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Resource Tracking Method'",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text","urn:alm:descriptor:com.tectonic.ui:advanced"}
+	ResourceTrackingMethod string `json:"resourceTrackingMethod,omitempty"`
+
 	// Server defines the options for the ArgoCD Server component.
 	Server ArgoCDServerSpec `json:"server,omitempty"`
 
@@ -619,6 +711,9 @@ type ArgoCDSpec struct {
 	// Version is the tag to use with the ArgoCD container image for all ArgoCD components.
 	//+operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Version",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:fieldGroup:ArgoCD","urn:alm:descriptor:com.tectonic.ui:text"}
 	Version string `json:"version,omitempty"`
+
+	// Banner defines an additional banner to be displayed in Argo CD UI
+	Banner *Banner `json:"banner,omitempty"`
 }
 
 // ArgoCDStatus defines the observed state of ArgoCD
@@ -642,9 +737,18 @@ type ArgoCDStatus struct {
 	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="Dex",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	Dex string `json:"dex,omitempty"`
 
+	// NotificationsController is a simple, high-level summary of where the Argo CD notifications controller component is in its lifecycle.
+	// There are five possible NotificationsController values:
+	// Pending: The Argo CD notifications controller component has been accepted by the Kubernetes system, but one or more of the required resources have not been created.
+	// Running: All of the required Pods for the Argo CD notifications controller component are in a Ready state.
+	// Failed: At least one of the  Argo CD notifications controller component Pods had a failure.
+	// Unknown: For some reason the state of the Argo CD notifications controller component could not be obtained.
+	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="NotificationsController",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
+	NotificationsController string `json:"notificationsController,omitempty"`
+
 	// SSOConfig defines the status of SSO configuration.
 	// Success: Only one SSO provider is configured in CR.
-	// Failed: More than one SSO providers are configure in CR.
+	// Failed: SSO configuration is illegal or more than one SSO providers are configured in CR.
 	// Unknown: For some reason the SSO configuration could not be obtained.
 	//+operator-sdk:csv:customresourcedefinitions:type=status,displayName="SSOConfig",xDescriptors={"urn:alm:descriptor:com.tectonic.ui:text"}
 	SSOConfig string `json:"ssoConfig,omitempty"`
@@ -687,6 +791,21 @@ type ArgoCDStatus struct {
 
 	// RepoTLSChecksum contains the SHA256 checksum of the latest known state of tls.crt and tls.key in the argocd-repo-server-tls secret.
 	RepoTLSChecksum string `json:"repoTLSChecksum,omitempty"`
+
+	// RedisTLSChecksum contains the SHA256 checksum of the latest known state of tls.crt and tls.key in the argocd-operator-redis-tls secret.
+	RedisTLSChecksum string `json:"redisTLSChecksum,omitempty"`
+
+	// Host is the hostname of the Ingress.
+	Host string `json:"host,omitempty"`
+}
+
+// Banner defines an additional banner message to be displayed in Argo CD UI
+// https://argo-cd.readthedocs.io/en/stable/operator-manual/custom-styles/#banners
+type Banner struct {
+	// Content defines the banner message content to display
+	Content string `json:"content"`
+	// URL defines an optional URL to be used as banner message link
+	URL string `json:"url,omitempty"`
 }
 
 // ArgoCDTLSSpec defines the TLS options for ArgCD.
@@ -730,6 +849,12 @@ func (r *ArgoCDRepoSpec) WantsAutoTLS() bool {
 	return r.AutoTLS == "openshift"
 }
 
+// WantsAutoTLS returns true if the redis server configuration has set
+// the autoTLS toggle to a supported provider.
+func (r *ArgoCDRedisSpec) WantsAutoTLS() bool {
+	return r.AutoTLS == "openshift"
+}
+
 // ApplicationInstanceLabelKey returns either the custom application instance
 // label key if set, or the default value.
 func (a *ArgoCD) ApplicationInstanceLabelKey() string {
@@ -738,4 +863,49 @@ func (a *ArgoCD) ApplicationInstanceLabelKey() string {
 	} else {
 		return common.ArgoCDDefaultApplicationInstanceLabelKey
 	}
+}
+
+// ResourceTrackingMethod represents the Argo CD resource tracking method to use
+type ResourceTrackingMethod int
+
+const (
+	ResourceTrackingMethodInvalid            ResourceTrackingMethod = -1
+	ResourceTrackingMethodLabel              ResourceTrackingMethod = 0
+	ResourceTrackingMethodAnnotation         ResourceTrackingMethod = 1
+	ResourceTrackingMethodAnnotationAndLabel ResourceTrackingMethod = 2
+)
+
+const (
+	stringResourceTrackingMethodLabel              string = "label"
+	stringResourceTrackingMethodAnnotation         string = "annotation"
+	stringResourceTrackingMethodAnnotationAndLabel string = "annotation+label"
+)
+
+// String returns the string representation for a ResourceTrackingMethod
+func (r ResourceTrackingMethod) String() string {
+	switch r {
+	case ResourceTrackingMethodLabel:
+		return stringResourceTrackingMethodLabel
+	case ResourceTrackingMethodAnnotation:
+		return stringResourceTrackingMethodAnnotation
+	case ResourceTrackingMethodAnnotationAndLabel:
+		return stringResourceTrackingMethodAnnotationAndLabel
+	}
+
+	// Default is to use label
+	return stringResourceTrackingMethodLabel
+}
+
+// ParseResourceTrackingMethod parses a string into a resource tracking method
+func ParseResourceTrackingMethod(name string) ResourceTrackingMethod {
+	switch name {
+	case stringResourceTrackingMethodLabel, "":
+		return ResourceTrackingMethodLabel
+	case stringResourceTrackingMethodAnnotation:
+		return ResourceTrackingMethodAnnotation
+	case stringResourceTrackingMethodAnnotationAndLabel:
+		return ResourceTrackingMethodAnnotationAndLabel
+	}
+
+	return ResourceTrackingMethodInvalid
 }

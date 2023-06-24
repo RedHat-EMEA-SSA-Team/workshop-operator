@@ -19,9 +19,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/devfile/devworkspace-operator/pkg/infrastructure"
-	"github.com/eclipse-che/che-operator/pkg/common/test"
-
 	"k8s.io/apimachinery/pkg/labels"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -215,6 +212,12 @@ func CloneMap(m map[string]string) map[string]string {
 	return result
 }
 
+func AddMap(a map[string]string, b map[string]string) {
+	for k, v := range b {
+		a[k] = v
+	}
+}
+
 // Converts label map into plain string
 func FormatLabels(m map[string]string) string {
 	if len(m) == 0 {
@@ -229,15 +232,10 @@ func FormatLabels(m map[string]string) string {
 func Whitelist(hostname string) (value string) {
 	i := strings.Index(hostname, ".")
 	if i > -1 {
-		return hostname[i:]
+		j := strings.LastIndex(hostname, ".")
+		if j > i {
+			return hostname[i:]
+		}
 	}
 	return hostname
-}
-
-func GetOperatorNamespace() (string, error) {
-	if test.IsTestMode() {
-		return "eclipse-che", nil
-	}
-
-	return infrastructure.GetOperatorNamespace()
 }

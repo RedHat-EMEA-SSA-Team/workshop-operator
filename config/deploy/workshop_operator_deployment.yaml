@@ -108,6 +108,8 @@ spec:
                         - name
                         - tag
                         type: object
+                      serverImageTag: 
+                        type: string
                     required:
                     - enabled
                     - image
@@ -790,7 +792,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.5
+        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.6
         livenessProbe:
           httpGet:
             path: /healthz

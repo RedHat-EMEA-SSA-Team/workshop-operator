@@ -14,7 +14,8 @@ import (
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/gitea"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
 	routev1 "github.com/openshift/api/route/v1"
-	"github.com/prometheus/common/log"
+
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -40,6 +41,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 
 	imageName := workshop.Spec.Infrastructure.Gitea.Image.Name
 	imageTag := workshop.Spec.Infrastructure.Gitea.Image.Tag
+	giteaServerImageTag := workshop.Spec.Infrastructure.Gitea.ServerImageTag
 
 	labels := map[string]string{
 		"app.kubernetes.io/part-of": "gitea",
@@ -89,7 +91,7 @@ func (r *WorkshopReconciler) addGitea(workshop *workshopv1.Workshop, users int) 
 		log.Infof("Created %s Operator", giteaOperator.Name)
 	}
 
-	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, "gitea-server", giteaNamespace.Name, labels)
+	giteaCustomResource := gitea.NewCustomResource(workshop, r.Scheme, "gitea-server", giteaNamespace.Name, giteaServerImageTag, labels)
 	if err := r.Create(context.TODO(), giteaCustomResource); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {

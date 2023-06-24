@@ -5,7 +5,7 @@ import (
 
 	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
-	"github.com/prometheus/common/log"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 	"k8s.io/apimachinery/pkg/api/errors"

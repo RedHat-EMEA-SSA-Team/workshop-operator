@@ -16,19 +16,27 @@ package v2
 // to regenerate `api/v2/zz_generatedxxx` code after modifying this file.
 
 import (
-	"os"
+	"strconv"
 	"strings"
+
+	ctrl "sigs.k8s.io/controller-runtime"
+
+	defaults "github.com/eclipse-che/che-operator/pkg/common/operator-defaults"
 
 	"github.com/devfile/devworkspace-operator/pkg/infrastructure"
 	"github.com/eclipse-che/che-operator/pkg/common/constants"
 
+	controllerv1alpha1 "github.com/devfile/devworkspace-operator/apis/controller/v1alpha1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	imagepullerv1alpha1 "github.com/che-incubator/kubernetes-image-puller-operator/api/v1alpha1"
 	devfile "github.com/devfile/api/v2/pkg/apis/workspaces/v1alpha2"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+var logger = ctrl.Log.WithName("checluster")
 
 // +k8s:openapi-gen=true
 // Desired configuration of Eclipse Che installation.
@@ -37,13 +45,13 @@ type CheClusterSpec struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=1
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Development environments"
-	// +kubebuilder:default:={disableContainerBuildCapabilities: true, defaultComponents: {{name: universal-developer-image, container: {image: "quay.io/devfile/universal-developer-image:ubi8-38da5c2"}}}, defaultEditor: eclipse/che-theia/latest, storage: {pvcStrategy: per-user}, defaultNamespace: {template: <username>-che, autoProvision: true}, secondsOfInactivityBeforeIdling:1800, secondsOfRunBeforeIdling:-1}
+	// +kubebuilder:default:={storage: {pvcStrategy: per-user}, defaultNamespace: {template: <username>-che, autoProvision: true}, secondsOfInactivityBeforeIdling:1800, secondsOfRunBeforeIdling:-1, startTimeoutSeconds:300, maxNumberOfWorkspacesPerUser:-1}
 	DevEnvironments CheClusterDevEnvironments `json:"devEnvironments"`
 	// Che components configuration.
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,order=2
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Components"
-	// +kubebuilder:default:={cheServer: {logLevel: INFO, debug: false}, metrics: {enable: true}, database: {externalDb: false, credentialsSecretName: postgres-credentials, postgresHostName: postgres, postgresPort: "5432", postgresDb: dbche, pvc: {claimSize: "1Gi"}}}
+	// +kubebuilder:default:={cheServer: {logLevel: INFO, debug: false}, metrics: {enable: true}}
 	Components CheClusterComponents `json:"components"`
 	// A configuration that allows users to work with remote Git repositories.
 	// +optional
@@ -66,6 +74,13 @@ type CheClusterSpec struct {
 // Development environment configuration.
 // +k8s:openapi-gen=true
 type CheClusterDevEnvironments struct {
+	//
+	// GatewayContainer configuration.
+	// +optional
+	GatewayContainer *Container `json:"gatewayContainer,omitempty"`
+	// Project clone container configuration.
+	// +optional
+	ProjectCloneContainer *Container `json:"projectCloneContainer,omitempty"`
 	// Workspaces persistent storage.
 	// +optional
 	// +kubebuilder:default:={pvcStrategy: per-user}
@@ -90,12 +105,10 @@ type CheClusterDevEnvironments struct {
 	// The plugin ID must have `publisher/plugin/version` format.
 	// The URI must start from `http://` or `https://`.
 	// +optional
-	// +kubebuilder:default:=eclipse/che-theia/latest
 	DefaultEditor string `json:"defaultEditor,omitempty"`
 	// Default components applied to DevWorkspaces.
 	// These default components are meant to be used when a Devfile, that does not contain any components.
 	// +optional
-	// +kubebuilder:default:={{name: universal-developer-image, container: {image: "quay.io/devfile/universal-developer-image:ubi8-38da5c2"}}}
 	DefaultComponents []devfile.Component `json:"defaultComponents,omitempty"`
 	// Idle timeout for workspaces in seconds.
 	// This timeout is the duration after which a workspace will be idled if there is no activity.
@@ -109,11 +122,52 @@ type CheClusterDevEnvironments struct {
 	SecondsOfRunBeforeIdling *int32 `json:"secondsOfRunBeforeIdling,omitempty"`
 	// Disables the container build capabilities.
 	// +optional
-	// +kubebuilder:default:=true
 	DisableContainerBuildCapabilities *bool `json:"disableContainerBuildCapabilities,omitempty"`
 	// Container build configuration.
 	// +optional
 	ContainerBuildConfiguration *ContainerBuildConfiguration `json:"containerBuildConfiguration,omitempty"`
+	// ServiceAccount to use by the DevWorkspace operator when starting the workspaces.
+	// +optional
+	// +kubebuilder:validation:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+	// +kubebuilder:validation:MaxLength=63
+	ServiceAccount string `json:"serviceAccount,omitempty"`
+	// List of ServiceAccount tokens that will be mounted into workspace pods as projected volumes.
+	// +optional
+	ServiceAccountTokens []controllerv1alpha1.ServiceAccountToken `json:"serviceAccountTokens,omitempty"`
+	// Pod scheduler for the workspace pods.
+	// If not specified, the pod scheduler is set to the default scheduler on the cluster.
+	// +optional
+	PodSchedulerName string `json:"podSchedulerName,omitempty"`
+	// StartTimeoutSeconds determines the maximum duration (in seconds) that a workspace can take to start
+	// before it is automatically failed.
+	// If not specified, the default value of 300 seconds (5 minutes) is used.
+	// +optional
+	// +kubebuilder:validation:Minimum:=1
+	// +kubebuilder:default:=300
+	StartTimeoutSeconds *int32 `json:"startTimeoutSeconds,omitempty"`
+	// DeploymentStrategy defines the deployment strategy to use to replace existing workspace pods
+	// with new ones. The available deployment stragies are `Recreate` and `RollingUpdate`.
+	// With the `Recreate` deployment strategy, the existing workspace pod is killed before the new one is created.
+	// With the `RollingUpdate` deployment strategy, a new workspace pod is created and the existing workspace pod is deleted
+	// only when the new workspace pod is in a ready state.
+	// If not specified, the default `Recreate` deployment strategy is used.
+	// +optional
+	// +kubebuilder:validation:Enum=Recreate;RollingUpdate
+	DeploymentStrategy appsv1.DeploymentStrategyType `json:"deploymentStrategy,omitempty"`
+	// Total number of workspaces, both stopped and running, that a user can keep.
+	// The value, -1, allows users to keep an unlimited number of workspaces.
+	// +kubebuilder:validation:Minimum:=-1
+	// +kubebuilder:default:=-1
+	// +optional
+	MaxNumberOfWorkspacesPerUser *int64 `json:"maxNumberOfWorkspacesPerUser,omitempty"`
+	// The maximum number of running workspaces per user.
+	// The value, -1, allows users to run an unlimited number of workspaces.
+	// +kubebuilder:validation:Minimum:=-1
+	// +optional
+	MaxNumberOfRunningWorkspacesPerUser *int64 `json:"maxNumberOfRunningWorkspacesPerUser,omitempty"`
+	// User configuration.
+	// +optional
+	User *UserConfiguration `json:"user,omitempty"`
 }
 
 // Che components configuration.
@@ -132,10 +186,6 @@ type CheClusterComponents struct {
 	// Configuration settings related to the devfile registry used by the Che installation.
 	// +optional
 	DevfileRegistry DevfileRegistry `json:"devfileRegistry"`
-	// Configuration settings related to the database used by the Che installation.
-	// +optional
-	// +kubebuilder:default:={externalDb: false, credentialsSecretName: postgres-credentials, postgresHostName: postgres, postgresPort: "5432", postgresDb: dbche, pvc: {claimSize: "1Gi"}}
-	Database Database `json:"database"`
 	// Configuration settings related to the dashboard used by the Che installation.
 	// +optional
 	Dashboard Dashboard `json:"dashboard"`
@@ -176,6 +226,10 @@ type CheClusterSpecNetworking struct {
 	// The secret must have a `app.kubernetes.io/part-of=che.eclipse.org` label.
 	// +optional
 	TlsSecretName string `json:"tlsSecretName,omitempty"`
+	// IngressClassName is the name of an IngressClass cluster resource.
+	// If a class name is defined in both the `IngressClassName` field and the `kubernetes.io/ingress.class` annotation,
+	// `IngressClassName` field takes precedence.
+	IngressClassName string `json:"ingressClassName,omitempty"`
 	// Authentication settings.
 	// +optional
 	// +kubebuilder:default:={gateway: {configLabels: {app: che, component: che-gateway-config}}}
@@ -211,13 +265,13 @@ type CheServer struct {
 	// +optional
 	// +kubebuilder:default:=false
 	Debug *bool `json:"debug,omitempty"`
-	// ClusterRoles assigned to Che ServiceAccount.
-	// The defaults roles are:
-	// - `<che-namespace>-cheworkspaces-namespaces-clusterrole`
-	// - `<che-namespace>-cheworkspaces-clusterrole`
-	// - `<che-namespace>-cheworkspaces-devworkspace-clusterrole`
-	// where the <che-namespace> is the namespace where the CheCluster CRD is created.
+	// Additional ClusterRoles assigned to Che ServiceAccount.
 	// Each role must have a `app.kubernetes.io/part-of=che.eclipse.org` label.
+	// The defaults roles are:
+	// - `<che-namespace>-cheworkspaces-clusterrole`
+	// - `<che-namespace>-cheworkspaces-namespaces-clusterrole`
+	// - `<che-namespace>-cheworkspaces-devworkspace-clusterrole`
+	// where the <che-namespace> is the namespace where the CheCluster CR is created.
 	// The Che Operator must already have all permissions in these ClusterRoles to grant them.
 	// +optional
 	ClusterRoles []string `json:"clusterRoles,omitempty"`
@@ -258,7 +312,7 @@ type PluginRegistry struct {
 	ExternalPluginRegistries []ExternalPluginRegistry `json:"externalPluginRegistries,omitempty"`
 	// Open VSX registry URL. If omitted an embedded instance will be used.
 	// +optional
-	OpenVSXURL string `json:"openVSXURL,omitempty"`
+	OpenVSXURL *string `json:"openVSXURL,omitempty"`
 }
 
 // Configuration settings related to the devfile registry used by the Che installation.
@@ -273,44 +327,6 @@ type DevfileRegistry struct {
 	// External devfile registries serving sample ready-to-use devfiles.
 	// +optional
 	ExternalDevfileRegistries []ExternalDevfileRegistry `json:"externalDevfileRegistries,omitempty"`
-}
-
-// Configuration settings related to the database used by the Che installation.
-// +k8s:openapi-gen=true
-type Database struct {
-	// Instructs the Operator to deploy a dedicated database.
-	// By default, a dedicated PostgreSQL database is deployed as part of the Che installation.
-	// When `externalDb` is set as `true`, no dedicated database is deployed by the
-	// Operator and you need to provide connection details about the external database you want to use.
-	// +optional
-	// +kubebuilder:default:=false
-	ExternalDb bool `json:"externalDb"`
-	// Deployment override options.
-	// +optional
-	Deployment *Deployment `json:"deployment,omitempty"`
-	// PostgreSQL database hostname that the Che server connects to.
-	// Override this value only when using an external database. See field `externalDb`.
-	// +kubebuilder:default:="postgres"
-	// +optional
-	PostgresHostName string `json:"postgresHostName,omitempty"`
-	// PostgreSQL Database port the Che server connects to.
-	// Override this value only when using an external database. See field `externalDb`.
-	// +optional
-	// +kubebuilder:default:="5432"
-	PostgresPort string `json:"postgresPort,omitempty"`
-	// PostgreSQL database name that the Che server uses to connect to the database.
-	// +optional
-	// +kubebuilder:default:="dbche"
-	PostgresDb string `json:"postgresDb,omitempty"`
-	// The secret that contains PostgreSQL `user` and `password` that the Che server uses to connect to the database.
-	// The secret must have a `app.kubernetes.io/part-of=che.eclipse.org` label.
-	// +optional
-	// +kubebuilder:default:="postgres-credentials"
-	CredentialsSecretName string `json:"credentialsSecretName,omitempty"`
-	// PVC settings for PostgreSQL database.
-	// +optional
-	// +kubebuilder:default:={claimSize: "1Gi"}
-	Pvc *PVC `json:"pvc,omitempty"`
 }
 
 // Che server metrics configuration
@@ -344,6 +360,7 @@ type ImagePuller struct {
 // See https://github.com/devfile/devworkspace-operator
 // +k8s:openapi-gen=true
 type DevWorkspace struct {
+	// Deprecated in favor of `MaxNumberOfRunningWorkspacesPerUser`
 	// The maximum number of running workspaces per user.
 	// +optional
 	RunningLimit string `json:"runningLimit,omitempty"`
@@ -380,6 +397,13 @@ type TrustedCerts struct {
 	GitTrustedCertsConfigMapName string `json:"gitTrustedCertsConfigMapName,omitempty"`
 }
 
+type UserConfiguration struct {
+	// Additional ClusterRoles assigned to the user.
+	// The role must have `app.kubernetes.io/part-of=che.eclipse.org` label.
+	// +optional
+	ClusterRoles []string `json:"clusterRoles,omitempty"`
+}
+
 // Configuration settings related to the workspaces persistent storage.
 type WorkspaceStorage struct {
 	// PVC settings when using the `per-user` PVC strategy.
@@ -389,12 +413,13 @@ type WorkspaceStorage struct {
 	// +optional
 	PerWorkspaceStrategyPvcConfig *PVC `json:"perWorkspaceStrategyPvcConfig,omitempty"`
 	// Persistent volume claim strategy for the Che server.
-	// The supported strategies are: `per-user` (all workspaces PVCs in one volume)
-	// and 'per-workspace' (each workspace is given its own individual PVC).
-	// For details, see https://github.com/eclipse/che/issues/21185.
+	// The supported strategies are: `per-user` (all workspaces PVCs in one volume),
+	// `per-workspace` (each workspace is given its own individual PVC)
+	// and `ephemeral` (non-persistent storage where local changes will be lost when
+	// the workspace is stopped.)
 	// +optional
 	// +kubebuilder:default:="per-user"
-	// +kubebuilder:validation:Enum=common;per-user;per-workspace
+	// +kubebuilder:validation:Enum=common;per-user;per-workspace;ephemeral
 	PvcStrategy string `json:"pvcStrategy,omitempty"`
 }
 
@@ -550,11 +575,15 @@ type ResourceRequirements struct {
 // List of resources.
 type ResourceList struct {
 	// Memory, in bytes. (500Gi = 500GiB = 500 * 1024 * 1024 * 1024)
+	// If the value is not specified, then the default value is set depending on the component.
+	// If value is `0`, then no value is set for the component.
 	// +optional
-	Memory resource.Quantity `json:"memory,omitempty"`
+	Memory *resource.Quantity `json:"memory,omitempty"`
 	// CPU, in cores. (500m = .5 cores)
+	// If the value is not specified, then the default value is set depending on the component.
+	// If value is `0`, then no value is set for the component.
 	// +optional
-	Cpu resource.Quantity `json:"cpu,omitempty"`
+	Cpu *resource.Quantity `json:"cpu,omitempty"`
 }
 
 // PodSecurityContext holds pod-level security attributes and common container settings.
@@ -580,55 +609,67 @@ type CheClusterGitServices struct {
 	// +optional
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Bitbucket"
 	BitBucket []BitBucketService `json:"bitbucket,omitempty"`
+	// Enables users to work with repositories hosted on Azure DevOps Service (dev.azure.com).
+	// +optional
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,displayName="Azure"
+	AzureDevOps []AzureDevOpsService `json:"azure,omitempty"`
 }
 
 // GitHubService enables users to work with repositories hosted on GitHub (GitHub.com or GitHub Enterprise).
 type GitHubService struct {
-	// Kubernetes secret, that contains Base64-encoded GitHub OAuth Client id and GitHub OAuth Client secret,
-	// that stored in `id` and `secret` keys respectively.
-	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-github/.
+	// Kubernetes secret, that contains Base64-encoded GitHub OAuth Client id and GitHub OAuth Client secret.
+	// See the following page for details: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-github/.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	SecretName string `json:"secretName"`
 	// GitHub server endpoint URL.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default:="https://github.com"
-	Endpoint string `json:"endpoint"`
+	// Deprecated in favor of `che.eclipse.org/scm-server-endpoint` annotation.
+	// See the following page for details: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-github/.
+	// +optional
+	Endpoint string `json:"endpoint,omitempty"`
 	// Disables subdomain isolation.
+	// Deprecated in favor of `che.eclipse.org/scm-github-disable-subdomain-isolation` annotation.
+	// See the following page for details: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-github/.
 	// +optional
 	DisableSubdomainIsolation *bool `json:"disableSubdomainIsolation,omitempty"`
 }
 
 // GitLabService enables users to work with repositories hosted on GitLab (gitlab.com or self-hosted).
 type GitLabService struct {
-	// Kubernetes secret, that contains Base64-encoded GitHub Application id and GitLab Application Client secret,
-	// that stored in `id` and `secret` keys respectively.
+	// Kubernetes secret, that contains Base64-encoded GitHub Application id and GitLab Application Client secret.
 	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-gitlab/.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	SecretName string `json:"secretName"`
 	// GitLab server endpoint URL.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default:="https://gitlab.com"
-	Endpoint string `json:"endpoint"`
+	// Deprecated in favor of `che.eclipse.org/scm-server-endpoint` annotation.
+	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-gitlab/.
+	// +optional
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // BitBucketService enables users to work with repositories hosted on Bitbucket (bitbucket.org or self-hosted).
 type BitBucketService struct {
 	// Kubernetes secret, that contains Base64-encoded Bitbucket OAuth 1.0 or OAuth 2.0 data.
-	// For OAuth 1.0: private key, Bitbucket Application link consumer key and Bitbucket Application link shared secret must be stored
-	// in `private.key`, `consumer.key` and `shared_secret` keys respectively.
-	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-1-for-a-bitbucket-server/.
-	// For OAuth 2.0: Bitbucket OAuth consumer key and Bitbucket OAuth consumer secret must be stored
-	// in `id` and `secret` keys respectively.
-	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-the-bitbucket-cloud/.
+	// See the following pages for details: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-1-for-a-bitbucket-server/
+	// and https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-the-bitbucket-cloud/.
 	// +kubebuilder:validation:Required
 	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
 	SecretName string `json:"secretName"`
 	// Bitbucket server endpoint URL.
-	// +kubebuilder:validation:Required
-	// +kubebuilder:default:="https://bitbucket.org"
+	// Deprecated in favor of `che.eclipse.org/scm-server-endpoint` annotation.
+	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-1-for-a-bitbucket-server/.
+	// +optional
 	Endpoint string `json:"endpoint,omitempty"`
+}
+
+// AzureDevOpsService enables users to work with repositories hosted on Azure DevOps Service (dev.azure.com).
+type AzureDevOpsService struct {
+	// Kubernetes secret, that contains Base64-encoded Azure DevOps Service Application ID and Client Secret.
+	// See the following page: https://www.eclipse.org/che/docs/stable/administration-guide/configuring-oauth-2-for-microsoft-azure-devops-services
+	// +kubebuilder:validation:Required
+	// +operator-sdk:csv:customresourcedefinitions:type=spec,xDescriptors="urn:alm:descriptor:io.kubernetes:Secret"
+	SecretName string `json:"secretName"`
 }
 
 // Container build configuration.
@@ -708,12 +749,6 @@ type CheClusterStatus struct {
 	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="Reason"
 	// +operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors="urn:alm:descriptor:text"
 	Reason string `json:"reason,omitempty"`
-	// The PostgreSQL version of the image in use.
-	// +optional
-	// +operator-sdk:csv:customresourcedefinitions:type=status
-	// +operator-sdk:csv:customresourcedefinitions:type=status,displayName="PostgreSQL version"
-	// +operator-sdk:csv:customresourcedefinitions:type=status,xDescriptors="urn:alm:descriptor:text"
-	PostgresVersion string `json:"postgresVersion,omitempty"`
 	// The resolved workspace base domain. This is either the copy of the explicitly defined property of the
 	// same name in the spec or, if it is undefined in the spec and we're running on OpenShift, the automatically
 	// resolved basedomain for routes.
@@ -747,7 +782,7 @@ type CheCluster struct {
 	Status CheClusterStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 // The CheClusterList contains a list of CheClusters.
 type CheClusterList struct {
 	metav1.TypeMeta `json:",inline"`
@@ -765,10 +800,6 @@ func (c *CheCluster) IsAirGapMode() bool {
 
 func (c *CheCluster) IsImagePullerSpecEmpty() bool {
 	return c.Spec.Components.ImagePuller.Spec == (imagepullerv1alpha1.KubernetesImagePullerSpec{})
-}
-
-func (c *CheCluster) IsImagePullerImagesEmpty() bool {
-	return len(c.Spec.Components.ImagePuller.Spec.Images) == 0
 }
 
 func (c *CheCluster) GetCheHost() string {
@@ -791,7 +822,7 @@ func (c *CheCluster) GetDefaultNamespace() string {
 		return c.Spec.DevEnvironments.DefaultNamespace.Template
 	}
 
-	return "<username>-" + os.Getenv("CHE_FLAVOR")
+	return "<username>-" + defaults.GetCheFlavor()
 }
 
 func (c *CheCluster) GetIdentityToken() string {
@@ -809,10 +840,36 @@ func (c *CheCluster) IsAccessTokenConfigured() bool {
 	return c.GetIdentityToken() == constants.AccessToken
 }
 
+// IsContainerBuildCapabilitiesEnabled returns true if container build capabilities are enabled.
+// If value is not set in the CheCluster CR, then the default value is used.
 func (c *CheCluster) IsContainerBuildCapabilitiesEnabled() bool {
-	return c.Spec.DevEnvironments.DisableContainerBuildCapabilities != nil && !*c.Spec.DevEnvironments.DisableContainerBuildCapabilities
+	disableContainerBuildCapabilitiesParsed, err := strconv.ParseBool(defaults.GetDevEnvironmentsDisableContainerBuildCapabilities())
+	if err != nil {
+		logger.Error(err, "Failed to parse disableContainerBuildCapabilities", "value", disableContainerBuildCapabilitiesParsed)
+		return false
+	}
+
+	if c.Spec.DevEnvironments.DisableContainerBuildCapabilities != nil {
+		disableContainerBuildCapabilitiesParsed = *c.Spec.DevEnvironments.DisableContainerBuildCapabilities
+	}
+
+	return !disableContainerBuildCapabilitiesParsed
 }
 
 func (c *CheCluster) IsOpenShiftSecurityContextConstraintSet() bool {
 	return c.Spec.DevEnvironments.ContainerBuildConfiguration != nil && c.Spec.DevEnvironments.ContainerBuildConfiguration.OpenShiftSecurityContextConstraint != ""
+}
+
+func (c *CheCluster) IsCheFlavor() bool {
+	return defaults.GetCheFlavor() == constants.CheFlavor
+}
+
+// IsEmbeddedOpenVSXRegistryConfigured returns true if the Open VSX Registry is configured to be embedded
+// only if only the `Spec.Components.PluginRegistry.OpenVSXURL` is empty.
+func (c *CheCluster) IsEmbeddedOpenVSXRegistryConfigured() bool {
+	openVSXURL := defaults.GetPluginRegistryOpenVSXURL()
+	if c.Spec.Components.PluginRegistry.OpenVSXURL != nil {
+		openVSXURL = *c.Spec.Components.PluginRegistry.OpenVSXURL
+	}
+	return openVSXURL == ""
 }

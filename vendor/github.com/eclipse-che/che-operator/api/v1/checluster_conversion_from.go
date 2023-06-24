@@ -45,10 +45,6 @@ func (dst *CheCluster) ConvertFrom(srcRaw conversion.Hub) error {
 		return err
 	}
 
-	if err := dst.convertFrom_Database(src); err != nil {
-		return err
-	}
-
 	if err := dst.convertFrom_DevWorkspace(src); err != nil {
 		return err
 	}
@@ -86,7 +82,6 @@ func (dst *CheCluster) convertFrom_GitServices(src *chev2.CheCluster) error {
 			dst.Spec.GitServices.GitHub,
 			GitHubService{
 				SecretName: github.SecretName,
-				Endpoint:   github.Endpoint,
 			})
 	}
 
@@ -95,7 +90,6 @@ func (dst *CheCluster) convertFrom_GitServices(src *chev2.CheCluster) error {
 			dst.Spec.GitServices.GitLab,
 			GitLabService{
 				SecretName: gitlab.SecretName,
-				Endpoint:   gitlab.Endpoint,
 			})
 	}
 
@@ -104,7 +98,6 @@ func (dst *CheCluster) convertFrom_GitServices(src *chev2.CheCluster) error {
 			dst.Spec.GitServices.BitBucket,
 			BitBucketService{
 				SecretName: bitbucket.SecretName,
-				Endpoint:   bitbucket.Endpoint,
 			})
 	}
 
@@ -115,6 +108,9 @@ func (dst *CheCluster) convertFrom_Server(src *chev2.CheCluster) error {
 	dst.Spec.Server.AirGapContainerRegistryHostname = src.Spec.ContainerRegistry.Hostname
 	dst.Spec.Server.AirGapContainerRegistryOrganization = src.Spec.ContainerRegistry.Organization
 	dst.Spec.Server.CheClusterRoles = strings.Join(src.Spec.Components.CheServer.ClusterRoles, ",")
+	if src.Spec.DevEnvironments.User != nil {
+		dst.Spec.Server.CheWorkspaceClusterRole = strings.Join(src.Spec.DevEnvironments.User.ClusterRoles, ",")
+	}
 	dst.Spec.Server.CustomCheProperties = utils.CloneMap(src.Spec.Components.CheServer.ExtraProperties)
 	if src.Spec.Components.CheServer.Debug != nil {
 		dst.Spec.Server.CheDebug = strconv.FormatBool(*src.Spec.Components.CheServer.Debug)
@@ -352,40 +348,10 @@ func (dst *CheCluster) convertFrom_Auth(src *chev2.CheCluster) error {
 	return nil
 }
 
-func (dst *CheCluster) convertFrom_Database(src *chev2.CheCluster) error {
-	dst.Spec.Database.ExternalDb = src.Spec.Components.Database.ExternalDb
-	dst.Spec.Database.ChePostgresDb = src.Spec.Components.Database.PostgresDb
-	dst.Spec.Database.ChePostgresHostName = src.Spec.Components.Database.PostgresHostName
-	dst.Spec.Database.ChePostgresPort = src.Spec.Components.Database.PostgresPort
-	dst.Spec.Database.PostgresVersion = src.Status.PostgresVersion
-	if src.Spec.Components.Database.Pvc != nil {
-		dst.Spec.Database.PvcClaimSize = src.Spec.Components.Database.Pvc.ClaimSize
-	}
-	dst.Spec.Database.ChePostgresSecret = src.Spec.Components.Database.CredentialsSecretName
-
-	if src.Spec.Components.Database.Deployment != nil {
-		if len(src.Spec.Components.Database.Deployment.Containers) != 0 {
-			dst.Spec.Database.PostgresEnv = src.Spec.Components.Database.Deployment.Containers[0].Env
-			dst.Spec.Database.PostgresImage = src.Spec.Components.Database.Deployment.Containers[0].Image
-			dst.Spec.Database.PostgresImagePullPolicy = src.Spec.Components.Database.Deployment.Containers[0].ImagePullPolicy
-			if src.Spec.Components.Database.Deployment.Containers[0].Resources != nil {
-				if src.Spec.Components.Database.Deployment.Containers[0].Resources.Requests != nil {
-					dst.Spec.Database.ChePostgresContainerResources.Requests.Memory = resource2String(src.Spec.Components.Database.Deployment.Containers[0].Resources.Requests.Memory)
-					dst.Spec.Database.ChePostgresContainerResources.Requests.Cpu = resource2String(src.Spec.Components.Database.Deployment.Containers[0].Resources.Requests.Cpu)
-				}
-				if src.Spec.Components.Database.Deployment.Containers[0].Resources.Limits != nil {
-					dst.Spec.Database.ChePostgresContainerResources.Limits.Memory = resource2String(src.Spec.Components.Database.Deployment.Containers[0].Resources.Limits.Memory)
-					dst.Spec.Database.ChePostgresContainerResources.Limits.Cpu = resource2String(src.Spec.Components.Database.Deployment.Containers[0].Resources.Limits.Cpu)
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 func (dst *CheCluster) convertFrom_DevWorkspace(src *chev2.CheCluster) error {
-	dst.Spec.DevWorkspace.RunningLimit = src.Spec.Components.DevWorkspace.RunningLimit
+	if src.Spec.DevEnvironments.MaxNumberOfRunningWorkspacesPerUser != nil {
+		dst.Spec.DevWorkspace.RunningLimit = strconv.FormatInt(*src.Spec.DevEnvironments.MaxNumberOfRunningWorkspacesPerUser, 10)
+	}
 	dst.Spec.DevWorkspace.SecondsOfInactivityBeforeIdling = src.Spec.DevEnvironments.SecondsOfInactivityBeforeIdling
 	dst.Spec.DevWorkspace.SecondsOfRunBeforeIdling = src.Spec.DevEnvironments.SecondsOfRunBeforeIdling
 	dst.Spec.DevWorkspace.Enable = true
@@ -444,10 +410,6 @@ func (dst *CheCluster) convertFrom_Status(src *chev2.CheCluster) error {
 }
 
 func (dst *CheCluster) convertFrom_Storage(src *chev2.CheCluster) error {
-	if src.Spec.Components.Database.Pvc != nil {
-		dst.Spec.Storage.PostgresPVCStorageClassName = src.Spec.Components.Database.Pvc.StorageClass
-	}
-
 	dst.Spec.Storage.PvcStrategy = src.Spec.DevEnvironments.Storage.PvcStrategy
 	if src.Spec.DevEnvironments.Storage.PerUserStrategyPvcConfig != nil {
 		dst.Spec.Storage.PvcClaimSize = src.Spec.DevEnvironments.Storage.PerUserStrategyPvcConfig.ClaimSize
@@ -475,8 +437,8 @@ func findTrustStoreConfigMap(namespace string) (string, error) {
 	return "", nil
 }
 
-func resource2String(resource resource.Quantity) string {
-	if resource.IsZero() {
+func resource2String(resource *resource.Quantity) string {
+	if resource == nil || resource.IsZero() {
 		return ""
 	}
 	return resource.String()
