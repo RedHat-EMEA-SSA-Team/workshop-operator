@@ -603,7 +603,7 @@ func NewDevWorkspace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name
 							"namespace": "openshift-devspaces"
 						}`)},
 
-						"controller.devfile.io/scc": v1.JSON{Raw: []byte(`"container-build"`)},
+//						"controller.devfile.io/scc": v1.JSON{Raw: []byte(`"container-build"`)},
 
 						"controller.devfile.io/storage-type": jsonCommon,
 						"dw.metadata.annotations": v1.JSON{Raw: []byte(`{

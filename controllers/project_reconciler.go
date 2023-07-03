@@ -58,7 +58,11 @@ func (r *WorkshopReconciler) reconcileProject(workshop *workshopv1.Workshop, use
 
 func (r *WorkshopReconciler) addProject(workshop *workshopv1.Workshop, projectName string, username string) (reconcile.Result, error) {
 
-	projectNamespace := kubernetes.NewNamespace(workshop, r.Scheme, projectName)
+	labels := map[string]string{
+		"argocd.argoproj.io/managed-by": "argocd",
+	}
+
+	projectNamespace := kubernetes.NewNamespaceAnnotate(workshop, r.Scheme, projectName, labels, nil)
 	if err := r.Create(context.TODO(), projectNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
@@ -120,14 +124,16 @@ func (r *WorkshopReconciler) manageRoles(workshop *workshopv1.Workshop, projectN
 	//Argo CD
 	argocdSAs := []rbac.Subject{}
 	argocdApplicationControllerSubject := rbac.Subject{
-		Kind: rbac.UserKind,
-		Name: "system:serviceaccount:argocd:argocd-argocd-application-controller",
+		Kind: rbac.ServiceAccountKind,
+		Name: "argocd-argocd-application-controller",
+		Namespace: "argocd",
 	}
 	argocdSAs = append(argocdSAs, argocdApplicationControllerSubject)
 
 	argocdServerSubject := rbac.Subject{
-		Kind: rbac.UserKind,
-		Name: "system:serviceaccount:argocd:argocd-argocd-server",
+		Kind: rbac.ServiceAccountKind,
+		Name: "argocd-argocd-server",
+		Namespace: "argocd",
 	}
 	argocdSAs = append(argocdSAs, argocdServerSubject)
 
