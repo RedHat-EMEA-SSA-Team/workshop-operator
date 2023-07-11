@@ -664,6 +664,21 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - ''
+  - metrics.k8s.io
+  - extensions
+  - apps
+  resources:
+  - pods/log
+  - events
+  - nodes
+  - pods
+  - deployments
+  - replicasets
+  verbs:
+  - get
+  - list
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -793,6 +808,7 @@ spec:
         command:
         - /manager
         image: quay.io/redhat-emea-ssa-team/workshop-operator:2.6
+        imagePullPolicy: Always
         livenessProbe:
           httpGet:
             path: /healthz
