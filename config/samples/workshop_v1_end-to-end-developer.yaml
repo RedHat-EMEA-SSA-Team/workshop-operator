@@ -55,4 +55,4 @@ spec:
         channel: "stable"
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v1.48.3
+        clusterServiceVersion: kiali-operator.v1.65.6
