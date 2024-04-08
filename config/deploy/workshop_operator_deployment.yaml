@@ -645,10 +645,13 @@ rules:
   - security.openshift.io
   resources:
   - securitycontextconstraints
+  resourceNames:
+  - container-build
   verbs:
   - list
   - update
   - watch
+  - use
 - apiGroups:
   - workshop.redhat-emea-ssa-team.com
   resources:
@@ -807,7 +810,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.6
+        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.7
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

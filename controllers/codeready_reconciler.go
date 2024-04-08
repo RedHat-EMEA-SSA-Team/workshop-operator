@@ -29,7 +29,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-)
+	)
 
 var jsonCheCodeEclipse = v1.JSON{Raw: []byte(`"che-code.eclipse.org"`)}
 var jsonFalse = v1.JSON{Raw: []byte(`false`)}
@@ -314,13 +314,43 @@ func (r *WorkshopReconciler) initWorkspace(workshop *workshopv1.Workshop, userna
 	}
 
 	// Create DevWorkspace (DW)
-	dwwork := NewDevWorkspace(workshop, r.Scheme, username+userNameAppend, devfile, devObj)
+ 	dwwork := NewDevWorkspace(workshop, r.Scheme, username+userNameAppend, devfile, devObj)
 	if err := r.Create(context.TODO(), dwwork); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created DevWorkspaces for user %s", username)
 	}
+	
+/*
 
+		} else {
+		if err == nil {
+			log.Infof("Created DevWorkspaces for user %s", username)
+		}
+
+		// discover the workspace id
+		dwFound := &workspaces.DevWorkspace{}
+		if err := r.Get(context.TODO(), types.NamespacedName{Name: "wksp-end-to-end-dev", Namespace:username+userNameAppend }, dwFound); err != nil {
+				log.Infof("DevWorkspaces for user %s not ready retrying", username)
+				return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 1}, nil
+			} else if dwFound.Status.Phase == "Failed" && dwFound.Status.Conditions[0].Type == workspaces.DevWorkspaceFailedStart{
+				log.Infof("Created DevWorkspaces for user %s but phase failed with condition %s", username, dwFound.Status.Conditions[0].Message)
+				if deleteErr := r.Delete(context.TODO(), dwFound); err != nil {
+					return reconcile.Result{}, deleteErr
+				}
+
+				log.Infof("DevWorkspaces for user %s failed to create so retrying", username)
+				return reconcile.Result{}, errors.NewServiceUnavailable("DevWorkspace failed to start")
+				// Wait for Workspace to be running
+//				if !kubernetes.GetK8Client().GetDeploymentStatus(dwFound.Status.DevWorkspaceId, username+userNameAppend) {
+//					return reconcile.Result{Requeue: true, RequeueAfter: time.Second * 1}, nil
+//				}
+			} else {
+				log.Infof("DevWorkspaces for user %s is running", username)
+			}
+		}
+		*/
+	
 	//Success
 	return reconcile.Result{}, nil
 
@@ -603,7 +633,7 @@ func NewDevWorkspace(workshop *workshopv1.Workshop, scheme *runtime.Scheme, name
 							"namespace": "openshift-devspaces"
 						}`)},
 
-//						"controller.devfile.io/scc": v1.JSON{Raw: []byte(`"container-build"`)},
+						"controller.devfile.io/scc": v1.JSON{Raw: []byte(`"container-build"`)},
 
 						"controller.devfile.io/storage-type": jsonCommon,
 						"dw.metadata.annotations": v1.JSON{Raw: []byte(`{
