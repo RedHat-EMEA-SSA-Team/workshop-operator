@@ -139,7 +139,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	}
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		"mesh-users", "istio-system", labels, istioUsers, "mesh-user", "Role")
+		"mesh-users", "istio-system", labels, istioUsers, "mesh-user", "Role")	
 
 	if err := r.Create(context.TODO(), meshUserRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
@@ -147,6 +147,14 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		log.Infof("Created %s Role Binding", meshUserRoleBinding.Name)
 	}
 
+	meshUserViewRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
+		"mesh-users-view", "istio-system", labels, istioUsers, "view", "ClusterRole")
+	if err := r.Create(context.TODO(), meshUserViewRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s ClusterRole Binding", meshUserViewRoleBinding.Name)
+	}
+	
 	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, "basic", istioSystemNamespace.Name)
 	if err := r.Create(context.TODO(), serviceMeshControlPlaneCR); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
