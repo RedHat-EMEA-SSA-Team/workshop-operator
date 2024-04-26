@@ -100,7 +100,7 @@ func (r *WorkshopReconciler) addGitOps(workshop *workshopv1.Workshop, users int,
 		userPolicy := `p, ` + userRole + `, applications, *, ` + projectName + `/*, allow
 p, ` + userRole + `, clusters, get, https://kubernetes.default.svc, allow
 p, ` + userRole + `, projects, *,` + projectName + `, allow
-p, ` + userRole + `, repositories, *, http://gitea-server.gitea.svc:3000/` + username + `/*, allow
+p, ` + userRole + `, repositories, *, https://gitea-server.gitea.svc:3000/` + username + `/*, allow
 g, ` + username + `, ` + userRole + `
 `
 		argocdPolicy = fmt.Sprintf("%s%s", argocdPolicy, userPolicy)

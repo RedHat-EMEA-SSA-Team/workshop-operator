@@ -147,8 +147,9 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		log.Infof("Created %s Role Binding", meshUserRoleBinding.Name)
 	}
 
+	// To avoid UI errors in Kiali fetching the status of the ingressgateway we need this extra Role Binding
 	meshUserViewRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		"mesh-users-view", "istio-system", labels, istioUsers, "view", "ClusterRole")
+		"mesh-users-view", "istio-system", labels, istioUsers, "kiali-viewer", "Role")
 	if err := r.Create(context.TODO(), meshUserViewRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
