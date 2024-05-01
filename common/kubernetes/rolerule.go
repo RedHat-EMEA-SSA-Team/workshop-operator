@@ -139,6 +139,36 @@ func JaegerUserRules() []rbac.PolicyRule {
 		},
 	}
 }
+//KialiUserRules gets Rules
+
+
+func KialiUserRules() []rbac.PolicyRule {
+	return []rbac.PolicyRule{
+		{
+			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"pods",
+			},
+			Verbs: []string{
+				"list",
+			},
+		},
+		{
+			APIGroups: []string{
+				"project.openshift.io",
+			},
+			Resources: []string{
+				"projects",
+			},
+			Verbs: []string{
+				"get",
+			},
+		},
+	}
+	
+}
 
 //IstioWorkspaceRules gets Rules
 func IstioWorkspaceRules() []rbac.PolicyRule {

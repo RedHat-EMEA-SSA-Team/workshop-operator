@@ -7,15 +7,22 @@ import (
 
 	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra"
 	maistrav1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
-	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
 
 	rbac "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	//	v1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
+	//	kialiConfig "github.com/kiali/kiali/config"
+	//	ctl "github.com/argoproj/gitops-engine/pkg/utils/kube/ctl"
 )
 
 // Reconciling ServiceMesh
@@ -147,13 +154,22 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		log.Infof("Created %s Role Binding", meshUserRoleBinding.Name)
 	}
 
-	// To avoid UI errors in Kiali fetching the status of the ingressgateway we need this extra Role Binding
+	// To avoid UI errors in Kiali fetching the deployment status of the ingressgateway we need this extra Role 
+	// and Binding
+	istioSysDeployRole := kubernetes.NewRole(workshop, r.Scheme,
+		"istio-system-deploy-status", "istio-system", labels, kubernetes.KialiUserRules())
+	if err := r.Create(context.TODO(), istioSysDeployRole); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Role", istioSysDeployRole.Name)
+	}
+
 	meshUserViewRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
-		"mesh-users-view", "istio-system", labels, istioUsers, "kiali-viewer", "Role")
+		"mesh-users-view", "istio-system", labels, istioUsers, "istio-system-deploy-status", "Role")
 	if err := r.Create(context.TODO(), meshUserViewRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s ClusterRole Binding", meshUserViewRoleBinding.Name)
+		log.Infof("Created %s Role Binding", meshUserViewRoleBinding.Name)
 	}
 	
 	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, "basic", istioSystemNamespace.Name)
@@ -184,10 +200,32 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		}
 	}
 
+	// Now patch the Kiali CR (if ready) to disable some of the warning features
+	// we use unstructured patch here because we have no Go struct definition for this object
+	patchBytes := []byte(`{ "spec":{"kiali_feature_flags":{"validations":{"ignore":["KIA0302"]}}}}`)
+
+	u := &unstructured.Unstructured{}
+	u.Object = map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"name":      "kiali",
+			"namespace": "istio-system",
+		},
+	}
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   "kiali.io",
+		Version: "v1alpha1",
+		Kind:    "Kiali",
+	})
+
+	if err := r.Client.Patch(context.TODO(), u, client.RawPatch(types.MergePatchType, patchBytes)); err != nil {
+		log.Infof("Kiali Custom Resource not ready")
+		return reconcile.Result{}, err
+	} 
+
 	//Success
 	return reconcile.Result{}, nil
 }
-
+ 
 func (r *WorkshopReconciler) addElasticSearchOperator(workshop *workshopv1.Workshop) (reconcile.Result, error) {
 
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ElasticSearchOperatorHub.Channel
