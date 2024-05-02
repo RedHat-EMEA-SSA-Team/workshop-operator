@@ -311,6 +311,8 @@ func (r *WorkshopReconciler) initWorkspace(workshop *workshopv1.Workshop, userna
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created DWTemplate for user %s", username)
+		// wait a little for the operator before creating the workspace
+		time.Sleep(2*time.Second)
 	}
 
 	// Create DevWorkspace (DW)
