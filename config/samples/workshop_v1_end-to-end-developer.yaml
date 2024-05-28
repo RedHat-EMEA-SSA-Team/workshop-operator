@@ -9,7 +9,7 @@ spec:
     password: openshift
   source:
     gitURL: https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop
-    gitBranch: "6.7"
+    gitBranch: "6.8"
   infrastructure:
     guide:
       scholars:
