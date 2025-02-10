@@ -21,7 +21,7 @@ spec:
       enabled: true
       operatorHub:
         channel: stable
-        clusterServiceVersion: devspacesoperator.v3.12.0
+        clusterServiceVersion: devspacesoperator.v3.17.0
       openshiftOAuth: true
     gitea:
       enabled: true
@@ -39,8 +39,8 @@ spec:
     pipeline:
       enabled: true
       operatorHub:
-        channel: pipelines-1.14
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.14.1
+        channel: pipelines-1.16
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.16.0
     project:
       enabled: true
       stagingName: cn-project
@@ -48,7 +48,7 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.5.0
+        clusterServiceVersion: servicemeshoperator.v2.6.4
       elasticSearchOperatorHub:
         channel: "stable"
       jaegerOperatorHub:
