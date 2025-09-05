@@ -32,13 +32,13 @@ func (r *WorkshopReconciler) reconcileServiceMesh(workshop *workshopv1.Workshop,
 
 	if enabledServiceMesh || enabledServerless {
 
-		if result, err := r.addElasticSearchOperator(workshop); util.IsRequeued(result, err) {
-			return result, err
-		}
+//		if result, err := r.addElasticSearchOperator(workshop); util.IsRequeued(result, err) {
+//			return result, err
+//		}
 
-		if result, err := r.addJaegerOperator(workshop); util.IsRequeued(result, err) {
-			return result, err
-		}
+//		if result, err := r.addJaegerOperator(workshop); util.IsRequeued(result, err) {
+//			return result, err
+//		}
 
 		if result, err := r.addKialiOperator(workshop); util.IsRequeued(result, err) {
 			return result, err
@@ -200,6 +200,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		}
 	}
 
+	
 	// Now patch the Kiali CR (if ready) to disable some of the warning features
 	// we use unstructured patch here because we have no Go struct definition for this object
 	patchBytes := []byte(`{ "spec":{"kiali_feature_flags":{"validations":{"ignore":["KIA0302"]}}}}`)
@@ -221,6 +222,7 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		log.Infof("Kiali Custom Resource not ready")
 		return reconcile.Result{}, err
 	} 
+    
 
 	//Success
 	return reconcile.Result{}, nil

@@ -189,7 +189,6 @@ require (
 )
 
 replace (
-
 	github.com/devfile/api/v2 => github.com/devfile/api/v2 v2.2.0
 	k8s.io/api => k8s.io/api v0.23.1
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.23.1

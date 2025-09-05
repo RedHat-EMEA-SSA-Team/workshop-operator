@@ -292,9 +292,7 @@ spec:
                         - channel
                         type: object
                     required:
-                    - elasticSearchOperatorHub
                     - enabled
-                    - jaegerOperatorHub
                     - kialiOperatorHub
                     - serviceMeshOperatorHub
                     type: object
@@ -820,7 +818,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.9
+        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.10
         imagePullPolicy: Always
         livenessProbe:
           httpGet:

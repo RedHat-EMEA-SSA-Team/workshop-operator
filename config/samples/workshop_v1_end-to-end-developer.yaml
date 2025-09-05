@@ -15,8 +15,8 @@ spec:
       scholars:
         enabled: true
         guideURL:
-          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.7/index.html" 
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.7/index.html" 
+          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.8/index.html" 
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.8/index.html" 
     codeReadyWorkspace:
       enabled: true
       operatorHub:
@@ -40,7 +40,7 @@ spec:
       enabled: true
       operatorHub:
         channel: pipelines-1.16
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.16.0
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.16.3
     project:
       enabled: true
       stagingName: cn-project
@@ -48,11 +48,7 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.6.4
-      elasticSearchOperatorHub:
-        channel: "stable"
-      jaegerOperatorHub:
-        channel: "stable"
+        clusterServiceVersion: servicemeshoperator.v2.6.9
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v1.73.4
+        clusterServiceVersion: kiali-operator.v1.73.10

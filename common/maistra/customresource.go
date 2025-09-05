@@ -13,7 +13,21 @@ import (
 func NewServiceMeshControlPlaneCR(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string) *maistrav2.ServiceMeshControlPlane {
 
-	var sampling int32 = 10000
+//	var sampling int32 = 10000
+
+	// 1. Create an instance of GatewaysConfig.
+	config := &maistrav2.GatewaysConfig{}
+
+	// 2. Initialize the OpenShiftRoute field. It's a pointer, so we must allocate it.
+	config.OpenShiftRoute = &maistrav2.OpenShiftRouteConfig{}
+
+	// 3. Create a boolean variable and get its address.
+	enabledValue := true
+
+	// 4. Assign the address of the boolean to the Enabled field.
+	// Because of the `json:",inline"` tag, you can access `Enabled` directly on OpenShiftRoute.
+	config.OpenShiftRoute.Enabled = &enabledValue
+
 
 	smcp := &maistrav2.ServiceMeshControlPlane{
 		ObjectMeta: metav1.ObjectMeta{
@@ -21,11 +35,11 @@ func NewServiceMeshControlPlaneCR(workshop *workshopv1.Workshop, scheme *runtime
 			Namespace: namespace,
 		},
 		Spec: maistrav2.ControlPlaneSpec{
-			Version: "v2.4",
-			Tracing: &maistrav2.TracingConfig{
-				Type:     maistrav2.TracerTypeJaeger,
-				Sampling: &sampling,
-			},
+			Version: "v2.6",
+//			Tracing: &maistrav2.TracingConfig{
+//				Type:     maistrav2.TracerTypeJaeger,
+//				Sampling: &sampling,
+//			},
 			Policy: &maistrav2.PolicyConfig{
 				Type: maistrav2.PolicyTypeIstiod,
 			},
@@ -33,16 +47,17 @@ func NewServiceMeshControlPlaneCR(workshop *workshopv1.Workshop, scheme *runtime
 				Type: maistrav2.TelemetryTypeIstiod,
 			},
 			Addons: &maistrav2.AddonsConfig{
-				Jaeger: &maistrav2.JaegerAddonConfig{
-					Install: &maistrav2.JaegerInstallConfig{
-						Storage: &maistrav2.JaegerStorageConfig{
-							Type: maistrav2.JaegerStorageTypeMemory,
-						},
-					},
-				},
+//				Jaeger: &maistrav2.JaegerAddonConfig{
+//					Install: &maistrav2.JaegerInstallConfig{
+//						Storage: &maistrav2.JaegerStorageConfig{
+//							Type: maistrav2.JaegerStorageTypeMemory,
+//						},
+//					},
+//				},
 				Prometheus: &maistrav2.PrometheusAddonConfig{},
 				Kiali:      &maistrav2.KialiAddonConfig{},
 			},
+			Gateways: config,
 		},
 	}
 

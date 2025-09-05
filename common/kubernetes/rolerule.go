@@ -157,6 +157,22 @@ func KialiUserRules() []rbac.PolicyRule {
 		},
 		{
 			APIGroups: []string{
+				"",
+			},
+			Resources: []string{
+				"pods/portforward",
+				"configmaps",
+			},
+			Verbs: []string{
+				"list",
+				"get",
+				"watch",
+				"update",
+				"create",
+			},
+		},
+		{
+			APIGroups: []string{
 				"project.openshift.io",
 			},
 			Resources: []string{
