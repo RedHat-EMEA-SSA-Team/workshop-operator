@@ -9,14 +9,14 @@ spec:
     password: openshift
   source:
     gitURL: https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop
-    gitBranch: "6.8"
+    gitBranch: "6.9"
   infrastructure:
     guide:
       scholars:
         enabled: true
         guideURL:
-          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.8/index.html" 
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.8/index.html" 
+          "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.9/index.html" 
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.9/index.html" 
     codeReadyWorkspace:
       enabled: true
       operatorHub:
