@@ -220,7 +220,7 @@ func getDevFileObj(workshop *workshopv1.Workshop, devfileURL string, appsHostnam
 func (r *WorkshopReconciler) initWorkspace(workshop *workshopv1.Workshop, username string,
 	codeflavor string, devfile string, devObj parser.DevfileObj, appsHostnameSuffix string) (reconcile.Result, error) {
 
-	const userNameAppend = "-devspaces"
+	const userNameAppend = "devspaces"
 	const settingsCMName = "settings-xml"
 	const gitconfigCMName = "gitconfig"
 

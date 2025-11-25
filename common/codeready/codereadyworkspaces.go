@@ -35,6 +35,7 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 	name string, namespace string) *che.CheCluster {
 
 	i := int32(-1)
+	b := true
 
 //	openShiftoAuth := workshop.Spec.Infrastructure.CodeReadyWorkspace.OpenshiftOAuth
 
@@ -63,6 +64,8 @@ func NewCustomResource(workshop *workshopv1.Workshop, scheme *runtime.Scheme,
 					},
 				TlsSupport:           true,
 				SelfSignedCert:       false,
+				WorkspaceNamespaceDefault: "<username>devspaces",
+				AllowAutoProvisionUserNamespace: &b,
 			},
 			Database: che.CheClusterSpecDB{
 				ExternalDb:          false,

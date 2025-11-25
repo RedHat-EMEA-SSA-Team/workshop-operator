@@ -2,7 +2,7 @@ set -x
 # delete user projects
 for i in {1..5}
 do
-  oc delete project user${i}-devspaces
+  oc delete project user${i}devspaces
 done
 oc get checluster --all-namespaces -o=jsonpath="{.items[*].metadata.namespace}"
 ~/Projects/CRW/dsc/bin/dsc version
