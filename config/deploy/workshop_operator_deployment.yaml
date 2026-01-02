@@ -551,10 +551,35 @@ rules:
   - update
   - watch
 - apiGroups:
-  - maistra.io
+  - sailoperator.io
   resources:
-  - servicemeshcontrolplanes
-  - servicemeshmemberrolls
+  - istios
+  - istiocnis
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - telemetry.istio.io
+  resources:
+  - telemetries
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitoring.coreos.com
+  resources:
+  - podmonitors
+  - servicemonitors
   verbs:
   - create
   - delete
@@ -684,12 +709,14 @@ rules:
     - kiali.io
   resources:
     - kialis
+    - ossmconsoles
   verbs:
     - get
     - list
     - patch
     - update
     - watch
+    - create
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -818,7 +845,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.11
+        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.12
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
@@ -846,6 +873,48 @@ spec:
         runAsNonRoot: true
       serviceAccountName: workshop-operator-controller-manager
       terminationGracePeriodSeconds: 10
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kiali-write-privileges
+rules:
+- apiGroups: [""]
+  resources:
+  - namespaces
+  - pods
+  - replicationcontrollers
+  - services
+  verbs:
+  - patch
+- apiGroups: ["extensions", "apps"]
+  resources:
+  - daemonsets
+  - deployments
+  - replicasets
+  - statefulsets
+  verbs:
+  - patch
+- apiGroups: ["batch"]
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - patch
+- apiGroups:
+  - networking.istio.io
+  - security.istio.io
+  - extensions.istio.io
+  - telemetry.istio.io
+  - gateway.networking.k8s.io
+  resources: ["*"]
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - patch
 ---
 # deploy java 21 into the java imagestream for OCP 4.20
 kind: ImageStream

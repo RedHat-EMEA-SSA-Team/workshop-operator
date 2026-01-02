@@ -9,14 +9,14 @@ spec:
     password: openshift
   source:
     gitURL: https://github.com/RedHat-EMEA-SSA-Team/end-to-end-developer-workshop
-    gitBranch: "6.9"
+    gitBranch: "6.10"
   infrastructure:
     guide:
       scholars:
         enabled: true
         guideURL:
           "inner-loop" : "https://redhat-scholars.github.io/inner-loop-guide/inner-loop/6.9/index.html" 
-          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.9/index.html" 
+          "outer-loop" : "https://redhat-scholars.github.io/outer-loop-guide/outer-loop/6.10/index.html" 
     codeReadyWorkspace:
       enabled: true
       operatorHub:
@@ -48,7 +48,7 @@ spec:
       enabled: true
       serviceMeshOperatorHub:
         channel: "stable"
-        clusterServiceVersion: servicemeshoperator.v2.6.9
+        clusterServiceVersion: servicemeshoperator3.v3.2.1
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v1.73.10
+        clusterServiceVersion: kiali-operator.v2.17.2

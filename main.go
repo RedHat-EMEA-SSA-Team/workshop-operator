@@ -33,8 +33,8 @@ import (
 
 	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/gitea"
-	maistrav1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
-	maistrav2 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v2"
+//	maistrav1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
+//	maistrav2 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v2"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/nexus"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/controllers"
 	argocdoperatorv1 "github.com/argoproj-labs/argocd-operator/api/v1alpha1"
@@ -47,6 +47,7 @@ import (
 	olmv1alpha1 "github.com/operator-framework/api/pkg/operators/v1alpha1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	workspaces "github.com/devfile/api/v2/pkg/apis/workspaces/v1alpha2"
+	ist "github.com/istio-ecosystem/sail-operator/api/v1"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -67,13 +68,14 @@ func init() {
 
 	utilruntime.Must(gitea.AddToScheme(scheme))
 	utilruntime.Must(nexus.AddToScheme(scheme))
-	utilruntime.Must(maistrav1.SchemeBuilder.AddToScheme(scheme))
-	utilruntime.Must(maistrav2.SchemeBuilder.AddToScheme(scheme))
+//	utilruntime.Must(maistrav1.SchemeBuilder.AddToScheme(scheme))
+//	utilruntime.Must(maistrav2.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(argocdv2.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(argocdoperatorv1.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(che.SchemeBuilder.AddToScheme(scheme))
 	utilruntime.Must(securityv1.AddToScheme(scheme))
 	utilruntime.Must(workspaces.AddToScheme(scheme))
+	utilruntime.Must(ist.SchemeBuilder.AddToScheme(scheme))
 
 	// +kubebuilder:scaffold:scheme
 }

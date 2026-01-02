@@ -37,6 +37,8 @@ package s2
 import (
 	"bytes"
 	"hash/crc32"
+
+	"github.com/klauspost/compress/internal/race"
 )
 
 /*
@@ -87,6 +89,9 @@ const (
 	// minBlockSize is the minimum size of block setting when creating a writer.
 	minBlockSize = 4 << 10
 
+	skippableFrameHeader = 4
+	maxChunkSize         = 1<<24 - 1 // 16777215
+
 	// Default block size
 	defaultBlockSize = 1 << 20
 
@@ -99,15 +104,22 @@ const (
 const (
 	chunkTypeCompressedData   = 0x00
 	chunkTypeUncompressedData = 0x01
+	ChunkTypeIndex            = 0x99
 	chunkTypePadding          = 0xfe
 	chunkTypeStreamIdentifier = 0xff
 )
 
-var crcTable = crc32.MakeTable(crc32.Castagnoli)
+var (
+	crcTable              = crc32.MakeTable(crc32.Castagnoli)
+	magicChunkSnappyBytes = []byte(magicChunkSnappy) // Can be passed to functions where it escapes.
+	magicChunkBytes       = []byte(magicChunk)       // Can be passed to functions where it escapes.
+)
 
 // crc implements the checksum specified in section 3 of
 // https://github.com/google/snappy/blob/master/framing_format.txt
 func crc(b []byte) uint32 {
+	race.ReadSlice(b)
+
 	c := crc32.Update(0, crcTable, b)
 	return c>>15 | c<<17 + 0xa282ead8
 }

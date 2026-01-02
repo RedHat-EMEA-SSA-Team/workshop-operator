@@ -3,13 +3,12 @@ package controllers
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	workshopv1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/api/v1"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/kubernetes"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/log"
-	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra"
-	maistrav1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
+	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/istio"
+//	maistrav1 "github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/maistra/v1"
 	"github.com/RedHat-EMEA-SSA-Team/workshop-operator/common/util"
 
 	rbac "k8s.io/api/rbac/v1"
@@ -55,38 +54,69 @@ func (r *WorkshopReconciler) reconcileServiceMesh(workshop *workshopv1.Workshop,
 
 func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users int) (reconcile.Result, error) {
 
-	operatorNamespace := "openshift-operators"
+	const operatorNamespace = "openshift-operators"
+	const kialiName = "kiali-user-workload-monitoring"
+	const istioName = "default"
+	const istioNamespace = "istio-system"
+	const cniNamespace = "istio-cni"
 
 	// Service Mesh Operator
 	channel := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.Channel
 	clusterserviceversion := workshop.Spec.Infrastructure.ServiceMesh.ServiceMeshOperatorHub.ClusterServiceVersion
 
-	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "servicemeshoperator", operatorNamespace,
-		"servicemeshoperator", channel, clusterserviceversion)
+	subscription := kubernetes.NewRedHatSubscription(workshop, r.Scheme, "servicemeshoperator3", operatorNamespace,
+		"servicemeshoperator3", channel, clusterserviceversion)
 	if err := r.Create(context.TODO(), subscription); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Subscription", subscription.Name)
 	}
 
-	if err := r.ApproveInstallPlan(clusterserviceversion, "servicemeshoperator", operatorNamespace); err != nil {
+	if err := r.ApproveInstallPlan(clusterserviceversion, "servicemeshoperator3", operatorNamespace); err != nil {
 		log.Infof("Waiting for Subscription to create InstallPlan for %s", subscription.Name)
 		return reconcile.Result{Requeue: true}, nil
 	}
 
 	// Wait for Operator to be running
-	if !kubernetes.GetK8Client().GetDeploymentStatus("istio-operator", operatorNamespace) {
+	if !kubernetes.GetK8Client().GetDeploymentStatus("servicemesh-operator3", operatorNamespace) {
 		return reconcile.Result{Requeue: true}, nil
 	}
 
-	// Deploy Service Mesh
-	istioSystemNamespace := kubernetes.NewNamespace(workshop, r.Scheme, "istio-system")
+	// Create namespace with labels
+	// oc label namespace istio-system istio-discovery=enabled
+	// oc label namespace istio-cni istio-discovery=enabled
+	discoveryLabels := map[string]string{
+		"istio-discovery":   "enabled",
+	}
+
+	annotations := map[string]string{
+	}
+
+
+	// Deploy Service Mesh Projects
+	istioSystemNamespace := kubernetes.NewNamespaceAnnotate(workshop, r.Scheme, istioNamespace, discoveryLabels, annotations)
 	if err := r.Create(context.TODO(), istioSystemNamespace); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
 		log.Infof("Created %s Namespace", istioSystemNamespace.Name)
 	}
 
+	cniSystemNamespace := kubernetes.NewNamespaceAnnotate(workshop, r.Scheme, cniNamespace, discoveryLabels, annotations)
+	if err := r.Create(context.TODO(), cniSystemNamespace); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Namespace", cniSystemNamespace.Name)
+	}
+
+	zNamespace := kubernetes.NewNamespaceAnnotate(workshop, r.Scheme, "ztunnel", discoveryLabels, annotations)
+	if err := r.Create(context.TODO(), zNamespace); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Namespace", zNamespace.Name)
+	}
+
+
+/*
 	istioMembers := []string{}
 	istioUsers := []rbac.Subject{}
 
@@ -105,16 +135,13 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		userSubject := rbac.Subject{
 			Kind:     rbac.UserKind,
 			Name:     username,
-			APIGroup: "rbac.authorization.k8s.io",
+			APIGroup: "rbac.authorization.k8s.io", 
 		}
 
 		istioMembers = append(istioMembers, stagingProjectName)
 		istioUsers = append(istioUsers, userSubject)
 	}
 
-	labels := map[string]string{
-		"app.kubernetes.io/part-of": "istio",
-	}
 
 	jaegerRole := kubernetes.NewRole(workshop, r.Scheme,
 		"jaeger-user", "istio-system", labels, kubernetes.JaegerUserRules())
@@ -144,6 +171,11 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 			}
 		}
 	}
+*/
+	/*
+	labels := map[string]string{
+		"app.kubernetes.io/part-of": "istio",
+	}
 
 	meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
 		"mesh-users", "istio-system", labels, istioUsers, "mesh-user", "Role")	
@@ -171,45 +203,121 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 	} else if err == nil {
 		log.Infof("Created %s Role Binding", meshUserViewRoleBinding.Name)
 	}
-	
-	serviceMeshControlPlaneCR := maistra.NewServiceMeshControlPlaneCR(workshop, r.Scheme, "basic", istioSystemNamespace.Name)
-	if err := r.Create(context.TODO(), serviceMeshControlPlaneCR); err != nil && !errors.IsAlreadyExists(err) {
+	*/
+
+	istioSailCR := istio.NewSailCR(workshop, r.Scheme, istioName, istioSystemNamespace.Name, discoveryLabels)
+	if err := r.Create(context.TODO(), istioSailCR); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Service Mesh Control Plane Custom Resource", serviceMeshControlPlaneCR.Name)
+		log.Infof("Created %s Istio SailOperator Custom Resource", istioSailCR.Name)
 	}
 
-	serviceMeshMemberRollCR := maistra.NewServiceMeshMemberRollCR(workshop, r.Scheme,
-		"default", istioSystemNamespace.Name, istioMembers)
-	if err := r.Create(context.TODO(), serviceMeshMemberRollCR); err != nil && !errors.IsAlreadyExists(err) {
+	istioCniCR := istio.NewCNICR(workshop, r.Scheme, istioName, cniSystemNamespace.Name, discoveryLabels)
+	if err := r.Create(context.TODO(), istioCniCR); err != nil && !errors.IsAlreadyExists(err) {
 		return reconcile.Result{}, err
 	} else if err == nil {
-		log.Infof("Created %s Custom Resource", serviceMeshMemberRollCR.Name)
-	} else if errors.IsAlreadyExists(err) {
-		serviceMeshMemberRollCRFound := &maistrav1.ServiceMeshMemberRoll{}
-		if err := r.Get(context.TODO(), types.NamespacedName{Name: serviceMeshMemberRollCR.Name, Namespace: istioSystemNamespace.Name}, serviceMeshMemberRollCRFound); err != nil {
+		log.Infof("Created %s Istio CNI Custom Resource", istioCniCR.Name)
+	}
+
+	kialiCR := istio.NewKialiCR(workshop, r.Scheme, kialiName, istioSystemNamespace.Name)
+	if err := r.Create(context.TODO(), kialiCR); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Kiali Custom Resource", kialiName)
+	}
+
+	// create cluster role binding for kiali to monitor
+	kialiMonitorRoleBinding := kubernetes.NewClusterRoleBindingSA(workshop, r.Scheme,
+		"kiali-monitoring-rbac", istioNamespace, nil, "kiali-service-account", "cluster-monitoring-view", "ClusterRole")
+	if err := r.Create(context.TODO(), kialiMonitorRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created %s Cluster Role Binding", kialiMonitorRoleBinding.Name)
+	}
+
+	// enable monitoring CM for user workload
+	data := map[string]string{
+		"config.yaml": `enableUserWorkload: true`,
+	}
+
+	monitorCM := kubernetes.NewConfigMapAnnotate(workshop, r.Scheme, "cluster-monitoring-config", "openshift-monitoring", nil, data, nil)
+	if err := r.Create(context.TODO(), monitorCM); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created config map for cluster monitoring %s", monitorCM.Name)
+	}
+
+	// enable telemetry
+	telemetry := istio.NewTelemetryCR(workshop, r.Scheme, "enable-prometheus-metrics", istioNamespace)
+	if err := r.Create(context.TODO(), telemetry); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created Telemetry cluster monitoring")
+	}
+
+	// enable Service monitor
+	serviceMonitor := istio.NewServiceMonitorCR(workshop, r.Scheme, "istiod-monitor", istioNamespace)
+	if err := r.Create(context.TODO(), serviceMonitor); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created ServiceMonitor in %s", istioNamespace)
+	}
+
+	// add PodMonitoring to istio-system 
+	podMonitor := istio.NewPodMonitorCR(workshop, r.Scheme, "proxies-monitor", istioNamespace)
+	if err := r.Create(context.TODO(), podMonitor); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created PodMonitor for %s", istioNamespace)
+	}
+
+
+	// loop through all the user projects we want to make discoverable by labelling the namespace
+	// and a podmonitor to every user project so Kiali can see them
+	// aslo add rbac so kiali can edit istio resources in the project
+	for id := 1; id <= users; id++ {
+		username := fmt.Sprintf("user%d", id)
+		stagingProjectName := fmt.Sprintf("%s%d", workshop.Spec.Infrastructure.Project.StagingName, id)
+		istioUsers := []rbac.Subject{}
+
+		var podMonitor = istio.NewPodMonitorCR(workshop, r.Scheme, "proxies-monitor", stagingProjectName)
+		if err := r.Create(context.TODO(), podMonitor); err != nil && !errors.IsAlreadyExists(err) {
 			return reconcile.Result{}, err
 		} else if err == nil {
-			if !reflect.DeepEqual(istioMembers, serviceMeshMemberRollCRFound.Spec.Members) {
-				serviceMeshMemberRollCRFound.Spec.Members = istioMembers
-				if err := r.Update(context.TODO(), serviceMeshMemberRollCRFound); err != nil {
-					return reconcile.Result{}, err
-				}
-				log.Infof("Updated %s Service Mesh Member Roll Custom Resource", serviceMeshMemberRollCRFound.Name)
-			}
+			log.Infof("Created PodMonitor for %s", stagingProjectName)
 		}
+
+
+		userSubject := rbac.Subject{
+			Kind:     rbac.UserKind,
+			Name:     username,
+			APIGroup: "rbac.authorization.k8s.io", 
+		}
+
+		istioUsers = append(istioUsers, userSubject)
+
+		meshUserRoleBinding := kubernetes.NewRoleBindingUsers(workshop, r.Scheme,
+		"kiali-write", stagingProjectName, nil, istioUsers, "kiali-write-privileges", "ClusterRole")	
+
+		if err := r.Create(context.TODO(), meshUserRoleBinding); err != nil && !errors.IsAlreadyExists(err) {
+			return reconcile.Result{}, err
+		} else if err == nil {
+			log.Infof("Created %s Role Binding", meshUserRoleBinding.Name)
+		}
+
 	}
+
 
 	
 	// Now patch the Kiali CR (if ready) to disable some of the warning features
 	// we use unstructured patch here because we have no Go struct definition for this object
-	patchBytes := []byte(`{ "spec":{"kiali_feature_flags":{"validations":{"ignore":["KIA0302"]}}}}`)
+	patchBytes := []byte(`{ "spec":{"kiali_feature_flags":{"validations":{"ignore":["KIA0302","KIA1301"]}}}}`)
 
 	u := &unstructured.Unstructured{}
 	u.Object = map[string]interface{}{
 		"metadata": map[string]interface{}{
-			"name":      "kiali",
-			"namespace": "istio-system",
+			"name":      kialiName,
+			"namespace": istioNamespace,
 		},
 	}
 	u.SetGroupVersionKind(schema.GroupVersionKind{
@@ -223,6 +331,13 @@ func (r *WorkshopReconciler) addServiceMesh(workshop *workshopv1.Workshop, users
 		return reconcile.Result{}, err
 	} 
     
+	// embed kiali in the web console 
+	embedKiali := istio.NewOSSMConsoleCR(workshop, r.Scheme)
+	if err := r.Create(context.TODO(), embedKiali); err != nil && !errors.IsAlreadyExists(err) {
+		return reconcile.Result{}, err
+	} else if err == nil {
+		log.Infof("Created embedded Kiali console")
+	}
 
 	//Success
 	return reconcile.Result{}, nil

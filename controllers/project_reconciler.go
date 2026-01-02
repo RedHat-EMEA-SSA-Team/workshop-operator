@@ -60,6 +60,7 @@ func (r *WorkshopReconciler) addProject(workshop *workshopv1.Workshop, projectNa
 
 	labels := map[string]string{
 		"argocd.argoproj.io/managed-by": "argocd",
+		"istio-discovery":   "enabled",
 	}
 
 	projectNamespace := kubernetes.NewNamespaceAnnotate(workshop, r.Scheme, projectName, labels, nil)
