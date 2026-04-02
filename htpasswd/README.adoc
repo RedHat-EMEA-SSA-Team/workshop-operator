@@ -13,9 +13,10 @@ Run these simple scripts to add the simple htpasswd password file for 20 users
 
 [source,bash]
 ----
-curl https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.7/htpasswd/htpasswd > htpasswd
+curl https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.12/htpasswd/htpasswd > htpasswd
 oc create secret generic htpasswd --from-file=htpasswd=htpasswd -n openshift-config
-oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.7/htpasswd/oauth_htpasswd_provider -n openshift-config
+oc apply -f https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.12/htpasswd/oauth_htpasswd_provider -n openshift-config
+oc adm policy add-cluster-role-to-user cluster-admin opentlc-mgr
 ----
 
 If you want, you can build your own password file like this:
@@ -33,7 +34,7 @@ If you want to append new users to an existing htpasswd file (using htpasswd-sec
 [source,bash]
 ----
 oc get secret htpasswd -ojsonpath={.data.htpasswd} -n openshift-config | base64 --decode | grep -e admin -e karla > users.htpasswd
-curl https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.7/htpasswd/htpasswd >> users.htpasswd
+curl https://raw.githubusercontent.com/RedHat-EMEA-SSA-Team/workshop-operator/2.12/htpasswd/htpasswd >> users.htpasswd
 oc create secret generic htpasswd --from-file=htpasswd=users.htpasswd --dry-run=client -o yaml -n openshift-config | oc replace -f -
 oc adm policy add-cluster-role-to-user cluster-admin opentlc-mgr
 ----

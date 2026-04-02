@@ -39,8 +39,8 @@ spec:
     pipeline:
       enabled: true
       operatorHub:
-        channel: pipelines-1.16
-        clusterServiceVersion: openshift-pipelines-operator-rh.v1.16.3
+        channel: pipelines-1.20
+        clusterServiceVersion: openshift-pipelines-operator-rh.v1.20.3
     project:
       enabled: true
       stagingName: cn-project
@@ -51,4 +51,4 @@ spec:
         clusterServiceVersion: servicemeshoperator3.v3.2.1
       kialiOperatorHub:
         channel: "stable"
-        clusterServiceVersion: kiali-operator.v2.17.2
+        clusterServiceVersion: kiali-operator.v2.22.1

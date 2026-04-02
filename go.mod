@@ -1,6 +1,6 @@
 module github.com/RedHat-EMEA-SSA-Team/workshop-operator
 
-go 1.24
+go 1.24.0
 
 require (
 	github.com/argoproj-labs/argocd-operator v0.4.0

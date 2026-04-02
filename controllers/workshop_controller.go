@@ -179,7 +179,7 @@ func (r *WorkshopReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	//////////////////////////
 	// Pipeline
 	//////////////////////////
-	if result, err := r.reconcilePipelines(workshop); util.IsRequeued(result, err) {
+	if result, err := r.reconcilePipelines(ctx, workshop); util.IsRequeued(result, err) {
 		return result, err
 	}
 
