@@ -845,7 +845,7 @@ spec:
         - --leader-elect
         command:
         - /manager
-        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.12
+        image: quay.io/redhat-emea-ssa-team/workshop-operator:2.13
         imagePullPolicy: Always
         livenessProbe:
           httpGet:
