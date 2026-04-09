@@ -129,8 +129,8 @@ github.com/chai2010/gettext-go/gettext/po
 # github.com/che-incubator/kubernetes-image-puller-operator v0.0.0-20210929175054-0128446f5af7
 ## explicit; go 1.15
 github.com/che-incubator/kubernetes-image-puller-operator/api/v1alpha1
-# github.com/cloudflare/circl v1.3.3
-## explicit; go 1.19
+# github.com/cloudflare/circl v1.6.3
+## explicit; go 1.22.0
 github.com/cloudflare/circl/dh/x25519
 github.com/cloudflare/circl/dh/x448
 github.com/cloudflare/circl/ecc/goldilocks
@@ -752,6 +752,8 @@ golang.org/x/crypto/blake2b
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/cast5
 golang.org/x/crypto/chacha20
+golang.org/x/crypto/cryptobyte
+golang.org/x/crypto/cryptobyte/asn1
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/hkdf
 golang.org/x/crypto/internal/alias
