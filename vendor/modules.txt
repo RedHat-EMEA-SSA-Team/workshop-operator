@@ -90,7 +90,7 @@ github.com/argoproj/argo-cd/v2/util/io/files
 github.com/argoproj/argo-cd/v2/util/io/path
 github.com/argoproj/argo-cd/v2/util/log
 github.com/argoproj/argo-cd/v2/util/proxy
-# github.com/argoproj/gitops-engine v0.7.0
+# github.com/argoproj/gitops-engine v0.7.1
 ## explicit; go 1.17
 github.com/argoproj/gitops-engine/internal/kubernetes_vendor/pkg/api/v1/endpoints
 github.com/argoproj/gitops-engine/internal/kubernetes_vendor/pkg/util/hash
