@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -108,13 +109,21 @@ type Endpoint struct {
 	// Host is the host.
 	Host string
 	// Port is the port to connect, if 0 the default port for the given protocol
-	// wil be used.
+	// will be used.
 	Port int
 	// Path is the repository path.
 	Path string
-	// InsecureSkipTLS skips ssl verify if protocol is https
+	// InsecureSkipTLS skips SSL verification if Protocol is HTTPS.
 	InsecureSkipTLS bool
-	// CaBundle specify additional ca bundle with system cert pool
+	// ClientCert specifies an optional client certificate to use for mutual
+	// TLS authentication if Protocol is HTTPS.
+	ClientCert []byte
+	// ClientKey specifies an optional client key to use for mutual TLS
+	// authentication if Protocol is HTTPS.
+	ClientKey []byte
+	// CaBundle specifies an optional CA bundle to use for SSL verification
+	// if Protocol is HTTPS. The bundle is added in addition to the system
+	// CA bundle.
 	CaBundle []byte
 	// Proxy provides info required for connecting to a proxy.
 	Proxy ProxyOptions
@@ -227,11 +236,17 @@ func parseURL(endpoint string) (*Endpoint, error) {
 		pass, _ = u.User.Password()
 	}
 
+	host := u.Hostname()
+	if strings.Contains(host, ":") {
+		// IPv6 address
+		host = "[" + host + "]"
+	}
+
 	return &Endpoint{
 		Protocol: u.Scheme,
 		User:     user,
 		Password: pass,
-		Host:     u.Hostname(),
+		Host:     host,
 		Port:     getPort(u),
 		Path:     getPath(u),
 	}, nil
@@ -289,7 +304,11 @@ func parseFile(endpoint string) (*Endpoint, bool) {
 		return nil, false
 	}
 
-	path := endpoint
+	path, err := filepath.Abs(endpoint)
+	if err != nil {
+		return nil, false
+	}
+
 	return &Endpoint{
 		Protocol: "file",
 		Path:     path,
