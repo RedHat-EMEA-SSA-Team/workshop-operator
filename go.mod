@@ -61,7 +61,7 @@ require (
 	github.com/devfile/registry-support/index/generator v0.0.0-20220527155645-8328a8a883be // indirect
 	github.com/devfile/registry-support/registry-library v0.0.0-20220627163229-4aa39fcb0c0a // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
-	github.com/docker/cli v20.10.11+incompatible // indirect
+	github.com/docker/cli v29.2.0+incompatible // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v20.10.11+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.6.4 // indirect
