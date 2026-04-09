@@ -15,16 +15,18 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/golang/groupcache/lru"
+
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/protocol/packp"
+	"github.com/go-git/go-git/v5/plumbing/protocol/packp/capability"
 	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/utils/ioutil"
-	"github.com/golang/groupcache/lru"
 )
 
 // it requires a bytes.Buffer, because we need to know the length
 func applyHeadersToRequest(req *http.Request, content *bytes.Buffer, host string, requestType string) {
-	req.Header.Add("User-Agent", "git/1.0")
+	req.Header.Add("User-Agent", capability.DefaultAgent())
 	req.Header.Add("Host", host) // host:port
 
 	if content == nil {
@@ -73,6 +75,17 @@ func advertisedReferences(ctx context.Context, s *session, serviceName string) (
 		return nil, err
 	}
 
+	// Git 2.41+ returns a zero-id plus capabilities when an empty
+	// repository is being cloned. This skips the existing logic within
+	// advrefs_decode.decodeFirstHash, which expects a flush-pkt instead.
+	//
+	// This logic aligns with plumbing/transport/internal/common/common.go.
+	if ar.IsEmpty() &&
+		// Empty repositories are valid for git-receive-pack.
+		transport.ReceivePackServiceName != serviceName {
+		return nil, transport.ErrEmptyRemoteRepository
+	}
+
 	transport.FilterUnsupportedCapabilities(ar.Capabilities)
 	s.advRefs = ar
 
@@ -80,9 +93,9 @@ func advertisedReferences(ctx context.Context, s *session, serviceName string) (
 }
 
 type client struct {
-	c          *http.Client
+	client     *http.Client
 	transports *lru.Cache
-	m          sync.RWMutex
+	mutex      sync.RWMutex
 }
 
 // ClientOptions holds user configurable options for the client.
@@ -136,7 +149,7 @@ func NewClientWithOptions(c *http.Client, opts *ClientOptions) transport.Transpo
 		}
 	}
 	cl := &client{
-		c: c,
+		client: c,
 	}
 
 	if opts != nil {
@@ -173,6 +186,18 @@ func transportWithInsecureTLS(transport *http.Transport) {
 	transport.TLSClientConfig.InsecureSkipVerify = true
 }
 
+func transportWithClientCert(transport *http.Transport, cert, key []byte) error {
+	keyPair, err := tls.X509KeyPair(cert, key)
+	if err != nil {
+		return err
+	}
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{}
+	}
+	transport.TLSClientConfig.Certificates = []tls.Certificate{keyPair}
+	return nil
+}
+
 func transportWithCABundle(transport *http.Transport, caBundle []byte) error {
 	rootCAs, err := x509.SystemCertPool()
 	if err != nil {
@@ -194,6 +219,11 @@ func transportWithProxy(transport *http.Transport, proxyURL *url.URL) {
 }
 
 func configureTransport(transport *http.Transport, ep *transport.Endpoint) error {
+	if len(ep.ClientCert) > 0 && len(ep.ClientKey) > 0 {
+		if err := transportWithClientCert(transport, ep.ClientCert, ep.ClientKey); err != nil {
+			return err
+		}
+	}
 	if len(ep.CaBundle) > 0 {
 		if err := transportWithCABundle(transport, ep.CaBundle); err != nil {
 			return err
@@ -218,21 +248,25 @@ func newSession(c *client, ep *transport.Endpoint, auth transport.AuthMethod) (*
 
 	// We need to configure the http transport if there are transport specific
 	// options present in the endpoint.
-	if len(ep.CaBundle) > 0 || ep.InsecureSkipTLS || ep.Proxy.URL != "" {
+	if len(ep.ClientKey) > 0 || len(ep.ClientCert) > 0 || len(ep.CaBundle) > 0 || ep.InsecureSkipTLS || ep.Proxy.URL != "" {
 		var transport *http.Transport
 		// if the client wasn't configured to have a cache for transports then just configure
 		// the transport and use it directly, otherwise try to use the cache.
 		if c.transports == nil {
-			tr, ok := c.c.Transport.(*http.Transport)
+			tr, ok := c.client.Transport.(*http.Transport)
 			if !ok {
 				return nil, fmt.Errorf("expected underlying client transport to be of type: %s; got: %s",
-					reflect.TypeOf(transport), reflect.TypeOf(c.c.Transport))
+					reflect.TypeOf(transport), reflect.TypeOf(c.client.Transport))
 			}
 
 			transport = tr.Clone()
-			configureTransport(transport, ep)
+			if err := configureTransport(transport, ep); err != nil {
+				return nil, err
+			}
 		} else {
 			transportOpts := transportOptions{
+				clientCert:      string(ep.ClientCert),
+				clientKey:       string(ep.ClientKey),
 				caBundle:        string(ep.CaBundle),
 				insecureSkipTLS: ep.InsecureSkipTLS,
 			}
@@ -247,20 +281,22 @@ func newSession(c *client, ep *transport.Endpoint, auth transport.AuthMethod) (*
 			transport, found = c.fetchTransport(transportOpts)
 
 			if !found {
-				transport = c.c.Transport.(*http.Transport).Clone()
-				configureTransport(transport, ep)
+				transport = c.client.Transport.(*http.Transport).Clone()
+				if err := configureTransport(transport, ep); err != nil {
+					return nil, err
+				}
 				c.addTransport(transportOpts, transport)
 			}
 		}
 
 		httpClient = &http.Client{
 			Transport:     transport,
-			CheckRedirect: c.c.CheckRedirect,
-			Jar:           c.c.Jar,
-			Timeout:       c.c.Timeout,
+			CheckRedirect: c.client.CheckRedirect,
+			Jar:           c.client.Jar,
+			Timeout:       c.client.Timeout,
 		}
 	} else {
-		httpClient = c.c
+		httpClient = c.client
 	}
 
 	s := &session{
@@ -395,24 +431,38 @@ func (a *TokenAuth) String() string {
 // Err is a dedicated error to return errors based on status code
 type Err struct {
 	Response *http.Response
+	Reason   string
 }
 
-// NewErr returns a new Err based on a http response
+// NewErr returns a new Err based on a http response and closes response body
+// if needed
 func NewErr(r *http.Response) error {
 	if r.StatusCode >= http.StatusOK && r.StatusCode < http.StatusMultipleChoices {
 		return nil
 	}
 
-	switch r.StatusCode {
-	case http.StatusUnauthorized:
-		return transport.ErrAuthenticationRequired
-	case http.StatusForbidden:
-		return transport.ErrAuthorizationFailed
-	case http.StatusNotFound:
-		return transport.ErrRepositoryNotFound
+	var reason string
+
+	// If a response message is present, add it to error
+	var messageBuffer bytes.Buffer
+	if r.Body != nil {
+		messageLength, _ := messageBuffer.ReadFrom(r.Body)
+		if messageLength > 0 {
+			reason = messageBuffer.String()
+		}
+		_ = r.Body.Close()
 	}
 
-	return plumbing.NewUnexpectedError(&Err{r})
+	switch r.StatusCode {
+	case http.StatusUnauthorized:
+		return fmt.Errorf("%w: %s", transport.ErrAuthenticationRequired, reason)
+	case http.StatusForbidden:
+		return fmt.Errorf("%w: %s", transport.ErrAuthorizationFailed, reason)
+	case http.StatusNotFound:
+		return fmt.Errorf("%w: %s", transport.ErrRepositoryNotFound, reason)
+	}
+
+	return plumbing.NewUnexpectedError(&Err{r, reason})
 }
 
 // StatusCode returns the status code of the response
